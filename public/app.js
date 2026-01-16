@@ -266,24 +266,10 @@ function updatePresetButtons() {
 function initDistanceSlider() {
   const distanceSlider = document.getElementById('distance-slider');
   const distanceValue = document.getElementById('distance-value');
-  const sliderPrice = document.getElementById('slider-price');
   const amountInput = document.getElementById('amount-input');
 
-  // Check if elements exist
-  if (!distanceSlider) {
-    console.warn('Distance slider not found');
-    return;
-  }
-  if (!distanceValue) {
-    console.warn('Distance value span not found');
-    return;
-  }
-  if (!sliderPrice) {
-    console.warn('Slider price span not found');
-    return;
-  }
-  if (!amountInput) {
-    console.warn('Amount input not found');
+  // Check if essential elements exist
+  if (!distanceSlider || !distanceValue || !amountInput) {
     return;
   }
 
@@ -296,7 +282,6 @@ function initDistanceSlider() {
     
     // Calculate price: base fare + (distance * rate per km)
     const calculatedPrice = Math.round(config.tukTukBaseFare + (distance * config.tukTukRatePerKm));
-    sliderPrice.textContent = `Rs. ${calculatedPrice}`;
     
     // Always update amount input when slider moves - slider takes precedence
     sliderIsUpdating = true; // Prevent input handler from marking as manual

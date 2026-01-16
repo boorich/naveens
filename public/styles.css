@@ -136,9 +136,6 @@ body {
 }
 
 .availability-badge {
-  position: absolute;
-  top: 20px;
-  right: 20px;
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -147,7 +144,7 @@ body {
   padding: 8px 14px;
   border-radius: 20px;
   width: fit-content;
-  z-index: 10;
+  margin-top: 10px;
 }
 
 .availability-dot {
@@ -279,56 +276,130 @@ body {
   font-size: 16px;
 }
 
+.slider-wrapper {
+  position: relative;
+  margin: 20px 0 30px;
+  padding: 0;
+}
+
+.slider-ruler {
+  display: flex;
+  justify-content: space-between;
+  padding: 0 12px;
+  margin-bottom: 0;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.ruler-tick {
+  position: relative;
+  font-size: 11px;
+  color: #6b7280;
+  font-weight: 500;
+  flex: 1;
+  text-align: center;
+  height: 20px;
+}
+
+.ruler-tick::before {
+  content: '';
+  width: 1px;
+  height: 4px;
+  background: white;
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2;
+}
+
+.ruler-tick:first-child::before,
+.ruler-tick:last-child::before {
+  height: 4px;
+  background: white;
+  width: 2px;
+}
+
+.ruler-tick:first-child,
+.ruler-tick:last-child {
+  color: #4b5563;
+  font-weight: 600;
+}
+
+.ruler-tick span {
+  display: block;
+  position: absolute;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  line-height: 1;
+}
+
 .distance-slider {
   width: 100%;
-  height: 8px;
-  border-radius: 4px;
+  height: 4px;
+  border-radius: 2px;
   background: #e5e7eb;
   outline: none;
   -webkit-appearance: none;
   appearance: none;
-  margin: 15px 0;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 0;
 }
 
 .distance-slider::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
-  width: 24px;
-  height: 24px;
+  width: 20px;
+  height: 20px;
   border-radius: 50%;
   background: #22c55e;
   cursor: pointer;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
   transition: all 0.2s;
+  border: 2px solid white;
+  margin-top: -8px;
 }
 
 .distance-slider::-webkit-slider-thumb:hover {
   background: #16a34a;
-  transform: scale(1.1);
+  transform: scale(1.15);
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.3);
+}
+
+.distance-slider::-webkit-slider-runnable-track {
+  width: 100%;
+  height: 4px;
+  background: #e5e7eb;
+  border-radius: 2px;
 }
 
 .distance-slider::-moz-range-thumb {
-  width: 24px;
-  height: 24px;
+  width: 20px;
+  height: 20px;
   border-radius: 50%;
   background: #22c55e;
   cursor: pointer;
-  border: none;
+  border: 2px solid white;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
   transition: all 0.2s;
 }
 
 .distance-slider::-moz-range-thumb:hover {
   background: #16a34a;
-  transform: scale(1.1);
+  transform: scale(1.15);
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.3);
 }
 
-.distance-labels {
-  display: flex;
-  justify-content: space-between;
-  font-size: 12px;
-  color: #6b7280;
-  margin-top: 5px;
+.distance-slider::-moz-range-track {
+  width: 100%;
+  height: 4px;
+  background: #e5e7eb;
+  border-radius: 2px;
 }
 
 .slider-price-indicator {
