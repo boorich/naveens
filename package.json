@@ -6,7 +6,8 @@
   "type": "module",
   "scripts": {
     "start": "node server.js",
-    "dev": "node server.js"
+    "dev": "node server.js",
+    "start:coinbase": "./start-coinbase.sh"
   },
   "keywords": ["x402", "payment", "tuktuk", "sri-lanka"],
   "author": "",
@@ -14,6 +15,8 @@
   "dependencies": {
     "express": "^4.18.2",
     "dotenv": "^16.4.7",
-    "qrcode": "^1.5.3"
+    "qrcode": "^1.5.3",
+    "axios": "^1.7.9",
+    "viem": "^2.21.45"
   }
 }
