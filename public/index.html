@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title data-i18n="page-title">Naveen's TukTuk - Settle Your Ride</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <!-- Language Toggle -->
+  <div class="language-toggle">
+    <button class="lang-btn active" data-lang="en">EN</button>
+    <button class="lang-btn" data-lang="si">SI</button>
+    <button class="lang-btn" data-lang="ta">TA</button>
+  </div>
+
+  <!-- Hero Section -->
+  <header class="hero">
+    <div class="hero-background"></div>
+    <div class="hero-content">
+      <img src="naveen.png" alt="Naveen" class="driver-photo" id="driver-photo" onerror="this.style.display='none'">
+      <div class="driver-text">
+        <h1 class="driver-name">
+          <span class="driver-name-first" data-i18n="driver-name-first">Naveen's</span>
+          <span class="driver-name-service" data-i18n="driver-name-service">TukTuk Service</span>
+        </h1>
+        <p class="driver-location" data-i18n="driver-location">Batticaloa, Sri Lanka</p>
+      </div>
+    </div>
+    <div class="availability-badge" id="availability-badge">
+      <span class="availability-dot"></span>
+      <span class="availability-text" data-i18n="available-now">Available now</span>
+    </div>
+    </div>
+    <div class="hero-bottom-band"></div>
+  </header>
+
+  <!-- Primary Action Buttons -->
+  <div class="action-buttons">
+    <button class="btn btn-green btn-whatsapp" id="btn-whatsapp">
+      <span class="btn-icon">💬</span>
+      <span data-i18n="whatsapp-me">WhatsApp Me</span>
+    </button>
+    <div class="btn-call-wrapper">
+      <button class="btn btn-white btn-call" id="btn-call">
+        <span class="btn-icon">📞</span>
+        <span data-i18n="call-me">Call Me</span>
+        <span class="dropdown-arrow">▼</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Payment Section -->
+  <section class="payment-section" id="payment-section">
+    <h2 class="section-title" data-i18n="settle-title">Settle Ride: Pay Agreed Amount</h2>
+    
+    <div class="payment-form">
+      <!-- Distance Slider -->
+      <div class="distance-slider-container">
+        <label for="distance-slider" class="input-label" data-i18n="distance-label">Distance: <span id="distance-value">5</span> km</label>
+        <input 
+          type="range" 
+          id="distance-slider" 
+          class="distance-slider" 
+          min="1" 
+          max="50" 
+          value="5" 
+          step="0.5"
+        >
+        <div class="distance-labels">
+          <span data-i18n="distance-short">1 km</span>
+          <span data-i18n="distance-long">50+ km</span>
+        </div>
+        <p class="slider-price-indicator" data-i18n="estimated-price">Estimated price: <span id="slider-price">Rs. 500</span></p>
+      </div>
+
+      <div class="divider-text" data-i18n="or-manual">Or enter amount manually:</div>
+      
+      <label for="amount-input" class="input-label" data-i18n="enter-amount">Enter Amount in LKR</label>
+      <input 
+        type="number" 
+        id="amount-input" 
+        class="amount-input" 
+        value="500" 
+        min="0" 
+        step="1"
+        placeholder="500"
+      >
+      
+      <div class="preset-buttons">
+        <button class="preset-btn active" data-amount="500">Rs. 500</button>
+        <button class="preset-btn" data-amount="1000">Rs. 1000</button>
+        <button class="preset-btn" data-amount="2000">Rs. 2000</button>
+        <button class="preset-btn" data-amount="custom" data-i18n="more">More...</button>
+      </div>
+
+      <div class="usdc-conversion">
+        <span data-i18n="estimated">Estimated:</span> <span id="usdc-amount">1.67</span> USDC
+      </div>
+
+      <button class="btn btn-green btn-large" id="btn-settle-usdc">
+        <span data-i18n="settle-usdc">Settle in USDC</span>
+      </button>
+
+      <p class="helper-text" data-i18n="helper-text">Settle in USDC. Naveen receives it directly.</p>
+    </div>
+
+    <!-- Payment Success State -->
+    <div class="payment-success" id="payment-success" style="display: none;">
+      <div class="success-icon">✓</div>
+      <h3 data-i18n="payment-success-title">Payment Successful!</h3>
+      <p data-i18n="settlement-visible">Settlement visible to driver</p>
+      <div class="transaction-details">
+        <p><strong data-i18n="amount-paid">Amount:</strong> <span id="success-amount"></span> USDC</p>
+        <p><strong data-i18n="transaction-hash">Transaction:</strong> <span id="success-tx" class="tx-hash"></span></p>
+      </div>
+    </div>
+
+    <!-- Payment Loading State -->
+    <div class="payment-loading" id="payment-loading" style="display: none;">
+      <div class="loading-spinner"></div>
+      <p data-i18n="processing-payment">Processing payment...</p>
+    </div>
+
+    <!-- Payment Error State -->
+    <div class="payment-error" id="payment-error" style="display: none;">
+      <p class="error-message" id="error-message"></p>
+    </div>
+  </section>
+
+  <!-- Recommend Naveen Section -->
+  <section class="share-section">
+    <h2 class="section-title" data-i18n="recommend-title">Recommend Naveen</h2>
+    <p class="share-description" data-i18n="recommend-description">If you liked your ride, sharing this page helps more than star ratings.</p>
+    
+    <div class="share-buttons">
+      <button class="share-btn share-whatsapp" id="share-whatsapp" title="Share on WhatsApp">
+        <span>💬</span>
+      </button>
+      <button class="share-btn share-facebook" id="share-facebook" title="Share on Facebook">
+        <span>f</span>
+      </button>
+      <button class="share-btn share-twitter" id="share-twitter" title="Share on Twitter/X">
+        <span>𝕏</span>
+      </button>
+      <button class="share-btn share-copy" id="share-copy" title="Copy link">
+        <span>📋</span>
+      </button>
+    </div>
+  </section>
+
+
+  <!-- Footer -->
+  <footer class="footer">
+    <p>
+      <span class="x402-brand">Powered by x402</span>
+      <span data-i18n="safety-note">Agree fare before you ride</span>
+    </p>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,19 @@
+{
+  "name": "naveens-tuktuk",
+  "version": "1.0.0",
+  "description": "TukTuk driver payment page for Sri Lanka using x402 payments",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "keywords": ["x402", "payment", "tuktuk", "sri-lanka"],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.18.2",
+    "dotenv": "^16.4.7",
+    "qrcode": "^1.5.3"
+  }
+}
