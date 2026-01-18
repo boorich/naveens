@@ -3,6 +3,17 @@
 # Start server with Coinbase facilitator (real payments)
 # Requires: FACILITATOR_URL and DRIVER_USDC_WALLET in .env or set here
 
+# Load .env file if it exists (skip comments and empty lines)
+if [ -f .env ]; then
+  while IFS= read -r line || [ -n "$line" ]; do
+    # Skip comments and empty lines
+    if [[ ! "$line" =~ ^[[:space:]]*# ]] && [[ -n "$line" ]]; then
+      # Export the variable (KEY=VALUE format)
+      export "$line" 2>/dev/null || true
+    fi
+  done < .env
+fi
+
 # Base Sepolia facilitator (testnet)
 # For production, use: https://api.cdp.coinbase.com/platform/v2/x402
 export FACILITATOR_URL="${FACILITATOR_URL:-https://x402.org/facilitator}"
@@ -15,13 +26,6 @@ if [ -z "$DRIVER_USDC_WALLET" ]; then
   echo "   Set it in .env or export it:"
   echo "   export DRIVER_USDC_WALLET=0x..."
   exit 1
-fi
-
-# Test private key (for /api/test-pay endpoint - payer wallet)
-if [ -z "$TEST_PRIVATE_KEY" ]; then
-  echo "⚠️  TEST_PRIVATE_KEY not set - /api/test-pay will be disabled"
-  echo "   Set it to enable browser payment testing:"
-  echo "   export TEST_PRIVATE_KEY=0x... (consumer/payer wallet private key)"
 fi
 
 # Test private key (for /api/test-pay endpoint - payer wallet)

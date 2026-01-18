@@ -2,7 +2,11 @@ import express from 'express';
 import dotenv from 'dotenv';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
-import * as x402Adapter from './lib/x402/adapter.js';
+import * as paymentService from './lib/payment/service.js';
+import { registerProvider, getProvider } from './lib/payment/provider.js';
+import { MockProvider } from './lib/payment/providers/mock.js';
+import { X402CoinbaseProvider } from './lib/payment/providers/x402-coinbase.js';
+import { createTestPayment } from './lib/payment/test-payer.js';
 
 dotenv.config();
 
@@ -17,9 +21,16 @@ const BASE_URL = process.env.BASE_URL || `http://localhost:${PORT}`;
 app.use(express.json());
 app.use(express.static(join(__dirname, 'public')));
 
-// Config for x402 adapter
-const x402Config = {
-  x402Mode: process.env.X402_MODE || 'mock',
+// Initialize payment providers
+registerProvider('mock', new MockProvider());
+registerProvider('x402-coinbase', new X402CoinbaseProvider());
+// Legacy name mapping for backward compatibility (coinbase → x402-coinbase)
+const coinbaseProvider = getProvider('x402-coinbase');
+registerProvider('coinbase', coinbaseProvider);
+
+// Config for payment service
+const paymentConfig = {
+  x402Mode: process.env.X402_MODE === 'coinbase' ? 'x402-coinbase' : (process.env.X402_MODE || 'mock'),
   baseUrl: BASE_URL,
   driverWallet: process.env.DRIVER_USDC_WALLET || '0x0000000000000000000000000000000000000000',
   lkrPerUsdc: parseFloat(process.env.LKR_PER_USDC || '300'),
@@ -30,14 +41,14 @@ const x402Config = {
 // API endpoint to get config (non-sensitive values for client)
 app.get('/api/config', (req, res) => {
   res.json({
-    lkrPerUsdc: x402Config.lkrPerUsdc,
+    lkrPerUsdc: paymentConfig.lkrPerUsdc,
     driverName: process.env.DRIVER_NAME || 'Driver',
     driverCity: process.env.DRIVER_CITY || 'Sri Lanka',
     driverCountry: process.env.DRIVER_COUNTRY || 'Sri Lanka',
   });
 });
 
-// x402 Payment endpoint
+// Payment endpoint
 app.post('/api/pay', async (req, res) => {
   try {
     const { amount, label } = req.body;
@@ -49,108 +60,75 @@ app.post('/api/pay', async (req, res) => {
     const labelValue = label || 'ride_payment';
 
     // Check if payment is already provided (PAYMENT-SIGNATURE header)
+    // This header is protocol-specific, but we need to check for it to support external clients
     const paymentSignatureHeader = req.headers['payment-signature'] || req.headers['x-payment'];
     
     if (!paymentSignatureHeader) {
-      // No payment provided - return 402 with PAYMENT-REQUIRED header
-      const paymentRequirements = await x402Adapter.createPaymentChallenge(
-        amount,
-        labelValue,
-        x402Config
-      );
-
-      // Encode payment requirements as base64 for PAYMENT-REQUIRED header
-      const requirementsJson = JSON.stringify(paymentRequirements);
-      const requirementsBase64 = Buffer.from(requirementsJson).toString('base64');
+      // No payment provided - return challenge
+      const result = await paymentService.requestPayment(amount, labelValue, paymentConfig);
       
-
-      // Transform v2 format to legacy format for x402-axios compatibility
-      // x402-axios expects: network="base-sepolia" (not "eip155:84532"), maxAmountRequired (not amount),
-      // and resource/description/mimeType at requirement level (not in root resource object)
-      const legacyRequirements = {
-        x402Version: paymentRequirements.x402Version || 2,
-        error: paymentRequirements.error || "Payment required",
-        accepts: paymentRequirements.accepts.map(req => {
-          // Map network from eip155:84532 to base-sepolia
-          let network = req.network;
-          if (network === 'eip155:84532') {
-            network = 'base-sepolia';
-          }
-          
-          return {
-            scheme: req.scheme,
-            network: network,
-            maxAmountRequired: req.amount || req.maxAmountRequired, // x402-axios uses maxAmountRequired
-            asset: req.asset,
-            payTo: req.payTo,
-            maxTimeoutSeconds: req.maxTimeoutSeconds,
-            // Legacy format requires these at requirement level
-            resource: paymentRequirements.resource?.url || `${x402Config.baseUrl}/api/pay`,
-            description: paymentRequirements.resource?.description || labelValue,
-            mimeType: paymentRequirements.resource?.mimeType || "application/json",
-            // Preserve extra fields if present
-            ...(req.extra && { extra: req.extra })
-          };
-        })
-      };
-
-      // x402-axios expects payment requirements in BOTH the header AND the response body
-      res.status(402);
-      res.set('PAYMENT-REQUIRED', requirementsBase64); // Keep original in header for v2 clients
-      // Return legacy format in body - x402-axios reads from error.response.data
-      return res.json(legacyRequirements);
+      if (result.status === 'challenge') {
+        // Return 402 with challenge data (protocol compatibility)
+        const challengeJson = JSON.stringify(result.challengeData);
+        const challengeBase64 = Buffer.from(challengeJson).toString('base64');
+        res.status(402);
+        res.set('PAYMENT-REQUIRED', challengeBase64);
+        return res.json(result.challengeData);
+      }
+      
+      // Already settled somehow (unusual, but handle it)
+      return res.json({
+        success: true,
+        transaction: result.proof.transaction,
+        network: result.proof.network,
+        amount: amount,
+      });
     }
 
-    // Payment provided - verify and settle
+    // Payment provided - process it
     try {
-      const paymentPayload = JSON.parse(
+      // Decode payment payload from header (protocol-specific, but needed for external clients)
+      const paymentData = JSON.parse(
         Buffer.from(paymentSignatureHeader, 'base64').toString('utf-8')
       );
 
-
-      // Build payment requirements to verify against (keep in v2 format - facilitator expects this)
-      const paymentRequirements = await x402Adapter.createPaymentChallenge(
-        amount,
-        labelValue,
-        x402Config
-      );
-      const requirements = paymentRequirements.accepts[0];
-      
-      // Note: Payment payload from x402-axios uses legacy format (network="base-sepolia"),
-      // but requirements should stay in v2 format (network="eip155:84532") for facilitator verification
-
-      // Verify payment
-      const verifyResult = await x402Adapter.verifyPayment(
-        paymentPayload,
-        requirements,
-        x402Config
-      );
-
-      if (!verifyResult.isValid) {
-        return res.status(402).json({
-          error: 'Invalid Payment',
-          reason: verifyResult.invalidReason || 'Payment verification failed',
+      // Get challenge data to process payment
+      const challengeResult = await paymentService.requestPayment(amount, labelValue, paymentConfig);
+      if (challengeResult.status !== 'challenge') {
+        return res.json({
+          success: true,
+          transaction: challengeResult.proof.transaction,
+          network: challengeResult.proof.network,
+          amount: amount,
         });
       }
 
-      // Settle payment
-      const settlement = await x402Adapter.settlePayment(
-        paymentPayload,
-        requirements,
-        x402Config
+      // Process payment (verify + settle)
+      const settlementResult = await paymentService.processPayment(
+        amount,
+        labelValue,
+        challengeResult.challengeData,
+        paymentData,
+        paymentConfig
       );
 
-      // Encode settlement response as base64 for PAYMENT-RESPONSE header
-      const settlementJson = JSON.stringify(settlement);
-      const settlementBase64 = Buffer.from(settlementJson).toString('base64');
+      if (settlementResult.status === 'settled') {
+        // Return settlement (protocol compatibility)
+        const settlementJson = JSON.stringify(settlementResult.proof);
+        const settlementBase64 = Buffer.from(settlementJson).toString('base64');
+        res.status(200);
+        res.set('PAYMENT-RESPONSE', settlementBase64);
+        return res.json({
+          success: true,
+          transaction: settlementResult.proof.transaction,
+          network: settlementResult.proof.network,
+          amount: amount,
+        });
+      }
 
-      res.status(200);
-      res.set('PAYMENT-RESPONSE', settlementBase64);
-      return res.json({
-        success: true,
-        transaction: settlement.transaction,
-        network: settlement.network,
-        amount: amount,
+      // Should not reach here
+      return res.status(500).json({
+        error: 'Unexpected payment state',
       });
     } catch (paymentError) {
       console.error('Payment processing error:', paymentError);
@@ -168,7 +146,7 @@ app.post('/api/pay', async (req, res) => {
   }
 });
 
-// Test payment endpoint - builds v2 payment manually (bypassing x402-axios legacy format)
+// Test payment endpoint - server acts as payer for testing
 // Only works if TEST_PRIVATE_KEY is set
 app.post('/api/test-pay', async (req, res) => {
   const testPrivateKey = process.env.TEST_PRIVATE_KEY;
@@ -187,66 +165,46 @@ app.post('/api/test-pay', async (req, res) => {
       return res.status(400).json({ error: 'Invalid amount' });
     }
 
-    const baseUrl = BASE_URL || `http://localhost:${PORT}`;
-    const payUrl = `${baseUrl}/api/pay`;
+    const labelValue = label || 'test_ride_payment';
+
+    // Get challenge from payment service (direct call, not HTTP)
+    const challengeResult = await paymentService.requestPayment(amount, labelValue, paymentConfig);
     
-    // Step 1: Get payment requirements from our own endpoint
-    const axios = (await import('axios')).default;
-    const initialResponse = await axios.post(payUrl, { amount, label: label || 'test_ride_payment' }, {
-      validateStatus: () => true // Don't throw on 402
-    });
-    
-    if (initialResponse.status !== 402) {
-      // Payment already succeeded somehow, or error
-      return res.status(initialResponse.status).json(initialResponse.data);
+    if (challengeResult.status !== 'challenge') {
+      // Already settled somehow
+      return res.json({
+        success: true,
+        transaction: challengeResult.proof.transaction,
+        network: challengeResult.proof.network,
+        amount: amount,
+      });
     }
+
+    // Create test payment using test payer utility
+    const paymentPayload = await createTestPayment(challengeResult.challengeData, testPrivateKey);
     
-    // Step 2: Decode payment requirements from PAYMENT-REQUIRED header
-    const paymentRequiredHeader = initialResponse.headers['payment-required'];
-    if (!paymentRequiredHeader) {
-      throw new Error('Missing PAYMENT-REQUIRED header in 402 response');
-    }
-    
-    const paymentRequirements = JSON.parse(Buffer.from(paymentRequiredHeader, 'base64').toString('utf-8'));
-    
-    // Step 3: Build v2 payment using @x402/core/client and @x402/evm/exact/client
-    const { x402Client } = await import('@x402/core/client');
-    const { ExactEvmScheme } = await import('@x402/evm/exact/client');
-    const { encodePaymentSignatureHeader } = await import('@x402/core/http');
-    const { privateKeyToAccount } = await import('viem/accounts');
-    
-    const account = privateKeyToAccount(testPrivateKey);
-    const clientSigner = {
-      address: account.address,
-      signTypedData: async (message) => {
-        return await account.signTypedData(message);
-      }
-    };
-    
-    const client = new x402Client();
-    client.register('eip155:84532', new ExactEvmScheme(clientSigner));
-    const paymentPayload = await client.createPaymentPayload(paymentRequirements);
-    const paymentHeaderValue = encodePaymentSignatureHeader(paymentPayload);
-    
-    // Step 4: Retry request with payment header
-    const paymentResponse = await axios.post(
-      payUrl,
-      { amount, label: label || 'test_ride_payment' },
-      {
-        headers: {
-          'PAYMENT-SIGNATURE': paymentHeaderValue,
-          'Access-Control-Expose-Headers': 'PAYMENT-RESPONSE'
-        },
-        validateStatus: () => true
-      }
+    // Process payment through service (verify + settle)
+    const settlementResult = await paymentService.processPayment(
+      amount,
+      labelValue,
+      challengeResult.challengeData,
+      paymentPayload,
+      paymentConfig
     );
 
-    if (paymentResponse.status >= 200 && paymentResponse.status < 300) {
-      res.status(paymentResponse.status).json(paymentResponse.data);
-    } else {
-      const errorData = paymentResponse.data || { error: 'Payment failed', message: `Status: ${paymentResponse.status}` };
-      res.status(paymentResponse.status).json(errorData);
+    if (settlementResult.status === 'settled') {
+      return res.json({
+        success: true,
+        transaction: settlementResult.proof.transaction,
+        network: settlementResult.proof.network,
+        amount: amount,
+      });
     }
+
+    // Should not reach here
+    return res.status(500).json({
+      error: 'Unexpected payment state',
+    });
   } catch (error) {
     console.error('Test payment error:', error);
     console.error('Error details:', error.stack);
@@ -266,5 +224,5 @@ app.get('/health', (req, res) => {
 // Start server
 app.listen(PORT, () => {
   console.log(`🚀 Server running at ${BASE_URL}`);
-  console.log(`📱 Payment mode: ${x402Config.x402Mode}`);
+  console.log(`📱 Payment mode: ${paymentConfig.x402Mode}`);
 });

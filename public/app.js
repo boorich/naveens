@@ -404,7 +404,7 @@ async function handlePayment() {
   document.getElementById('btn-settle-usdc').disabled = true;
   
   try {
-    // Initial payment request
+    // Request payment - get challenge or settlement
     const response = await fetch('/api/pay', {
       method: 'POST',
       headers: {
@@ -416,25 +416,20 @@ async function handlePayment() {
       }),
     });
     
-    if (response.status === 402) {
-      // Payment required - decode PAYMENT-REQUIRED header
-      const paymentRequiredHeader = response.headers.get('PAYMENT-REQUIRED');
-      if (!paymentRequiredHeader) {
-        throw new Error('Missing PAYMENT-REQUIRED header');
+    const data = await response.json();
+    
+    // Check if challenge (402) or already settled (200)
+    if (response.status === 402 || response.status === 200) {
+      // Check if already settled
+      if (data.success && data.transaction) {
+        // Already settled
+        showPaymentSuccess(usdcAmount, data.transaction);
+        return;
       }
       
-      const paymentRequired = JSON.parse(
-        atob(paymentRequiredHeader)
-      );
-      
-      // Use test payment endpoint if available (server-side payment module execution)
-      // Otherwise fall back to mock for development
-      let paymentResponse;
-      
+      // Challenge - try test payment endpoint (server acts as payer for testing)
       try {
-        // Try test payment endpoint first (uses payment module server-side)
-        console.log(`💳 Attempting test payment: ${usdcAmount} USDC`);
-        paymentResponse = await fetch('/api/test-pay', {
+        const testResponse = await fetch('/api/test-pay', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -445,74 +440,29 @@ async function handlePayment() {
           }),
         });
         
-        console.log(`Test payment response status: ${paymentResponse.status}`);
-        
-        // If test endpoint is disabled (501), fall back to mock
-        if (paymentResponse.status === 501) {
-          throw new Error('TEST_DISABLED');
+        if (testResponse.status === 501) {
+          // Test mode disabled - show error (test payment required in this setup)
+          throw new Error('Test payment mode disabled. TEST_PRIVATE_KEY not configured.');
         }
         
-      } catch (testError) {
-        // Fall back to mock payment if test endpoint unavailable
-        console.error('Test payment error:', testError);
-        if (testError.message === 'TEST_DISABLED' || testError.name === 'TypeError') {
-          console.log('Test payment unavailable, falling back to mock payment (will fail in coinbase mode)');
-          const mockPaymentPayload = {
-            version: 2,
-            requirements: paymentRequired.accepts[0],
-            signature: `0x${generateRandomHex(130)}`,
-          };
-          
-          const paymentHeader = btoa(JSON.stringify(mockPaymentPayload));
-          
-          paymentResponse = await fetch('/api/pay', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'PAYMENT-SIGNATURE': paymentHeader,
-            },
-            body: JSON.stringify({
-              amount: usdcAmount,
-              label: 'ride_payment',
-            }),
-          });
+        if (!testResponse.ok) {
+          const errorData = await testResponse.json().catch(() => ({}));
+          throw new Error(errorData.message || errorData.error || 'Test payment failed');
+        }
+        
+        const testData = await testResponse.json();
+        if (testData.success && testData.transaction) {
+          showPaymentSuccess(usdcAmount, testData.transaction);
         } else {
-          throw testError;
+          throw new Error('Payment failed: no transaction returned');
         }
+      } catch (testError) {
+        console.error('Test payment error:', testError);
+        throw testError;
       }
-      
-      // Handle response (test endpoint returns JSON directly)
-      if (paymentResponse.ok) {
-        const data = await paymentResponse.json();
-        const settlement = { transaction: data.transaction, network: data.network };
-        showPaymentSuccess(usdcAmount, settlement.transaction);
-      } else {
-        // Read error response
-        let errorData;
-        try {
-          const text = await paymentResponse.text();
-          errorData = text ? JSON.parse(text) : { error: 'Payment failed', message: `Status: ${paymentResponse.status}` };
-        } catch (e) {
-          errorData = { error: 'Payment failed', message: `Status: ${paymentResponse.status}` };
-        }
-        console.error('Payment failed:', errorData);
-        throw new Error(errorData.message || errorData.error || 'Payment failed');
-      }
-    } else if (response.ok) {
-      const settlementHeader = response.headers.get('PAYMENT-RESPONSE');
-      const settlement = JSON.parse(
-        Buffer.from(settlementHeader, 'base64').toString('utf-8')
-      );
-      showPaymentSuccess(usdcAmount, settlement.transaction);
     } else {
-      let errorMessage = 'Payment failed';
-      try {
-        const errorData = await response.json();
-        errorMessage = errorData.message || errorData.error || errorMessage;
-      } catch (e) {
-        // Response not JSON, use default message
-      }
-      throw new Error(errorMessage);
+      // Error response
+      throw new Error(data.message || data.error || 'Payment failed');
     }
   } catch (error) {
     console.error('Payment error:', error);
@@ -542,15 +492,6 @@ function showError(message) {
   setTimeout(() => {
     document.getElementById('payment-error').style.display = 'none';
   }, 5000);
-}
-
-function generateRandomHex(length) {
-  const chars = '0123456789abcdef';
-  let result = '';
-  for (let i = 0; i < length; i++) {
-    result += chars[Math.floor(Math.random() * chars.length)];
-  }
-  return result;
 }
 
 // Share Buttons
