@@ -145,20 +145,24 @@ app.post('/api/auth/verify', async (req, res) => {
     // Check if owner is the zero address (not a valid owner)
     if (config.owner === '0x0000000000000000000000000000000000000000' || !config.owner.startsWith('0x')) {
       return res.status(400).json({ 
-        error: 'Owner not set. Make the first payment to this cash register to claim ownership. The first payer becomes the owner.' 
+        error: 'Owner not set. Pay $1 USDC to claim ownership first. The payment transaction will set your address as owner on-chain.' 
       });
     }
     
-    // Verify signature
+    // Verify signature against owner address
+    // The owner address was set from the $1 payment transaction (on-chain proof)
+    // Now we just verify the signature matches that proven owner address
     try {
       const isValid = await verifyMessage({
-        address: config.owner,
+        address: config.owner, // This is the address from the $1 payment transaction
         message: message,
         signature: signature,
       });
       
       if (!isValid) {
-        return res.status(401).json({ error: 'Invalid signature' });
+        return res.status(401).json({ 
+          error: 'Invalid signature. The signature must match the owner address. Make sure you\'re using the private key that corresponds to the address that paid the $1 ownership fee.' 
+        });
       }
       
       // Generate session token (simple timestamp-based for now)

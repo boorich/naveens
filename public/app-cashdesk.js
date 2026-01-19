@@ -622,7 +622,8 @@ function hideEditModal() {
 document.getElementById('btn-close-edit')?.addEventListener('click', hideEditModal);
 document.getElementById('btn-cancel-edit')?.addEventListener('click', hideEditModal);
 
-// Verify ownership
+// Verify ownership - this happens AFTER the $1 payment has set the owner on-chain
+// We just need to prove the private key matches the owner address stored in config.json
 document.getElementById('btn-verify-ownership')?.addEventListener('click', async () => {
   const privateKeyInput = document.getElementById('edit-private-key');
   const privateKey = privateKeyInput.value.trim();
@@ -632,30 +633,36 @@ document.getElementById('btn-verify-ownership')?.addEventListener('click', async
     return;
   }
 
-  if (!signMessageClientSide) {
+  if (!signMessageClientSide || !getAddressFromPrivateKey) {
     alert('Signing libraries not available. Please ensure client-signer.bundle.js is built.');
     return;
   }
 
   try {
-    // Get address from private key (for server verification)
-    const ownerAddress = getAddressFromPrivateKey(privateKey);
+    // Get address from private key to verify it matches owner
+    const keyAddress = getAddressFromPrivateKey(privateKey);
     
-    // Sign challenge message
-    const challengeMessage = `Cash Register Ownership Verification\nTimestamp: ${Date.now()}`;
+    // Check if this address matches the owner (sanity check before signing)
+    if (storeConfig?.owner && keyAddress.toLowerCase() !== storeConfig.owner.toLowerCase()) {
+      alert(`This private key corresponds to address ${keyAddress}, but the owner is ${storeConfig.owner}. Please use the private key that matches the address that paid the $1 ownership fee.`);
+      return;
+    }
+    
+    // Sign challenge message - server will verify signature matches owner address from config.json
+    // The owner address was set from the on-chain $1 payment transaction
+    const challengeMessage = `Cash Register Ownership Verification\nOwner: ${storeConfig?.owner || 'unknown'}\nTimestamp: ${Date.now()}`;
     const signature = await signMessageClientSide(challengeMessage, privateKey);
 
-    // Clear private key immediately after signing (discrete action)
+    // Clear private key immediately after signing (discrete action - used once, discarded)
     privateKeyInput.value = '';
 
-    // Verify with server
+    // Verify with server - server checks signature matches owner address (from $1 payment)
     const response = await fetch('/api/auth/verify', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         message: challengeMessage,
         signature: signature,
-        ownerAddress: ownerAddress,
       }),
     });
 
@@ -668,7 +675,7 @@ document.getElementById('btn-verify-ownership')?.addEventListener('click', async
       document.getElementById('edit-form').style.display = 'block';
     } else {
       const error = await response.json();
-      alert('Verification failed: ' + (error.error || 'Invalid signature. Make sure this is the owner wallet.'));
+      alert('Verification failed: ' + (error.error || 'Invalid signature. Make sure you\'re using the private key that matches the address that paid the $1 ownership fee.'));
     }
   } catch (error) {
     console.error('Ownership verification error:', error);
