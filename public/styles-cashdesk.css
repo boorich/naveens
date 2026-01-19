@@ -169,6 +169,41 @@ section {
   display: block;
 }
 
+.claim-form {
+  display: block;
+}
+
+.claim-explanation {
+  text-align: center;
+  margin-bottom: 2rem;
+  color: #4a5568;
+  line-height: 1.8;
+}
+
+.claim-explanation p {
+  font-size: 1.125rem;
+  margin-bottom: 1rem;
+}
+
+.claim-explanation ul {
+  list-style: none;
+  padding: 0;
+}
+
+.claim-explanation li {
+  padding: 0.5rem 0;
+  position: relative;
+  padding-left: 1.5rem;
+}
+
+.claim-explanation li:before {
+  content: "✓";
+  position: absolute;
+  left: 0;
+  color: #22c55e;
+  font-weight: 700;
+}
+
 .preset-buttons {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));

@@ -19,7 +19,88 @@
     </div>
   </header>
 
-  <!-- Payment Section -->
+  <!-- Claim Ownership Section (shown when no owner) -->
+  <section class="payment-section" id="claim-ownership-section" style="display: none;">
+    <div class="container">
+      <div class="payment-container">
+        <h2 class="section-title">Activate Your Cash Register</h2>
+        <p class="section-intro">Claim ownership for $1 USDC (one-time, forever)</p>
+
+        <div class="payment-content" id="claim-content">
+          <div class="claim-form">
+            <div class="claim-explanation">
+              <p>This cash register is unclaimed. Pay $1 USDC to become the owner and unlock editing.</p>
+              <ul style="text-align: left; display: inline-block; margin: 20px 0;">
+                <li>One-time payment - own it forever</li>
+                <li>No recurring fees or subscriptions</li>
+                <li>Unlock admin access to customize your page</li>
+              </ul>
+            </div>
+
+            <!-- Private Key Input (shown when payment challenge received) -->
+            <div class="private-key-container" id="claim-private-key-container" style="display: none;">
+              <div class="private-key-warning">
+                <div class="warning-icon">🔐</div>
+                <p>
+                  Your private key will be used to sign the payment and immediately discarded. 
+                  Never stored or sent to the server.
+                </p>
+              </div>
+              <label for="claim-private-key-input" class="input-label">
+                <span>Paste Private Key</span>
+              </label>
+              <input 
+                type="password" 
+                id="claim-private-key-input" 
+                class="private-key-input"
+                placeholder="0x..."
+                autocomplete="off"
+                spellcheck="false"
+              >
+              <div class="private-key-status" id="claim-private-key-status" style="display: none;">
+                <span class="status-icon">✓</span>
+                <span>Ready to sign</span>
+              </div>
+              <p class="helper-text-small">
+                Paste your private key. It will be used to sign this payment and immediately cleared from memory. 
+                The key never leaves your browser.
+              </p>
+            </div>
+
+            <button class="btn btn-primary btn-large" id="btn-claim-ownership">
+              Claim Ownership for $1 USDC
+            </button>
+
+            <p class="helper-text">One-time payment to activate your cash register. Forever ownership.</p>
+          </div>
+
+          <!-- Claim Success State -->
+          <div class="payment-success" id="claim-success" style="display: none;">
+            <div class="success-icon">✓</div>
+            <h3>Ownership Claimed!</h3>
+            <p>You're now the owner of this cash register</p>
+            <div class="transaction-details">
+              <p><strong>Amount:</strong> 1.00 USDC</p>
+              <p><strong>Transaction:</strong> <a id="claim-tx-link" class="tx-hash" href="#" target="_blank" rel="noopener noreferrer"><span id="claim-tx"></span> ↗</a></p>
+              <p id="claim-verification-status" class="verification-status" style="display: none;"></p>
+            </div>
+            <p class="helper-text-small" style="margin-top: 10px; margin-bottom: 20px;">
+              Click "Edit" to customize your cash register. Future admin access only requires signing (no payment).
+            </p>
+            <button class="btn btn-secondary" id="btn-continue-after-claim">Continue to Cash Register</button>
+          </div>
+
+          <!-- Claim Loading State -->
+          <div class="payment-loading" id="claim-loading" style="display: none;">
+            <div class="loading-spinner"></div>
+            <p>Processing ownership claim...</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Payment Section (shown when owner exists) -->
   <section class="payment-section" id="payment-section">
     <div class="container">
       <div class="payment-container">

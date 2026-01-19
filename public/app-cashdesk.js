@@ -53,18 +53,44 @@ function renderStoreConfig() {
   document.getElementById('product-title').textContent = product.title || 'Purchase';
   document.getElementById('product-description').textContent = product.description || 'Buy and pay in USDC.';
 
-  // Setup payment presets
-  setupPaymentPresets(product);
+  // Check if owner is set - show appropriate UI
+  const hasOwner = storeConfig.owner && 
+                   storeConfig.owner !== '0x0000000000000000000000000000000000000000' &&
+                   storeConfig.owner.startsWith('0x');
   
-  // Update price display
-  updatePrice();
+  if (hasOwner) {
+    // Owner exists - show regular payment section and edit button
+    document.getElementById('claim-ownership-section').style.display = 'none';
+    document.getElementById('payment-section').style.display = 'block';
+    
+    // Setup payment presets
+    setupPaymentPresets(product);
+    
+    // Update price display
+    updatePrice();
+    
+    // Show edit button
+    setupEditButton();
+  } else {
+    // No owner - show claim ownership section
+    document.getElementById('claim-ownership-section').style.display = 'block';
+    document.getElementById('payment-section').style.display = 'none';
+    
+    // Don't show edit button until ownership is claimed
+    document.getElementById('btn-edit').style.display = 'none';
+  }
 }
 
 // Always show Edit button - ownership verification happens when clicked (discrete action)
 function setupEditButton() {
   const editBtn = document.getElementById('btn-edit');
-  editBtn.style.display = 'inline-block';
-  editBtn.addEventListener('click', () => showEditModal());
+  if (editBtn) {
+    editBtn.style.display = 'inline-block';
+    // Remove existing listeners to avoid duplicates
+    const newBtn = editBtn.cloneNode(true);
+    editBtn.parentNode.replaceChild(newBtn, editBtn);
+    document.getElementById('btn-edit').addEventListener('click', () => showEditModal());
+  }
 }
 
 function setupPaymentPresets(product) {
@@ -166,8 +192,173 @@ try {
   console.warn('Client-side signer not available:', error);
 }
 
+// Claim Ownership handler (fixed $1 USDC)
+document.getElementById('btn-claim-ownership')?.addEventListener('click', handleClaimOwnership);
+
 // Payment handler
 document.getElementById('btn-pay-usdc')?.addEventListener('click', handlePayment);
+
+// Handle claim ownership flow ($1 USDC)
+async function handleClaimOwnership() {
+  const claimContent = document.getElementById('claim-content');
+  const claimForm = claimContent.querySelector('.claim-form');
+  const claimLoading = document.getElementById('claim-loading');
+  const claimSuccess = document.getElementById('claim-success');
+  const CLAIM_AMOUNT = 1.00; // Fixed $1 USDC for ownership claim
+  
+  try {
+    claimForm.style.display = 'none';
+    claimLoading.style.display = 'block';
+    
+    const response = await fetch('/api/pay', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        amount: CLAIM_AMOUNT,
+        label: 'ownership_claim',
+      }),
+    });
+
+    if (response.status === 402) {
+      const data = await response.json();
+      claimLoading.style.display = 'none';
+      claimForm.style.display = 'block';
+      
+      const privateKeyContainer = document.getElementById('claim-private-key-container');
+      const privateKeyInput = document.getElementById('claim-private-key-input');
+      const privateKeyStatus = document.getElementById('claim-private-key-status');
+      const privateKey = privateKeyInput.value.trim();
+
+      if (!privateKey) {
+        privateKeyContainer.style.display = 'block';
+        privateKeyInput.focus();
+        privateKeyStatus.style.display = 'none';
+        document.getElementById('btn-claim-ownership').disabled = false;
+        
+        const keyInputHandler = () => {
+          if (privateKeyInput.value.trim()) {
+            privateKeyStatus.style.display = 'flex';
+            privateKeyStatus.innerHTML = '<span class="status-icon">✓</span> <span>Ready to sign</span>';
+          }
+        };
+        privateKeyInput.addEventListener('input', keyInputHandler, { once: true });
+        
+        document.getElementById('btn-claim-ownership').textContent = 'Sign & Claim Ownership';
+        return;
+      }
+      
+      try {
+        privateKeyInput.disabled = true;
+        privateKeyStatus.innerHTML = '<span class="status-icon">⏳</span> <span>Signing payment...</span>';
+
+        if (!signPaymentClientSide) {
+          throw new Error('Client-side signing libraries not available');
+        }
+
+        const signedPayment = await signPaymentClientSide(data, privateKey);
+        privateKeyInput.value = '';
+        privateKeyStatus.innerHTML = '<span class="status-icon">✓</span> <span>Key cleared from memory</span>';
+        privateKeyInput.disabled = false;
+        setTimeout(() => {
+          privateKeyContainer.style.display = 'none';
+          privateKeyStatus.style.display = 'none';
+        }, 500);
+
+        claimForm.style.display = 'none';
+        claimLoading.style.display = 'block';
+
+        const paymentResponse = await fetch('/api/pay', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'PAYMENT-SIGNATURE': btoa(JSON.stringify(signedPayment)),
+          },
+          body: JSON.stringify({
+            amount: CLAIM_AMOUNT,
+            label: 'ownership_claim',
+          }),
+        });
+
+        if (!paymentResponse.ok) {
+          const errorData = await paymentResponse.json().catch(() => ({}));
+          throw new Error(errorData.message || errorData.error || 'Ownership claim failed');
+        }
+
+        const paymentData = await paymentResponse.json();
+        if (paymentData.success && paymentData.transaction) {
+          await showClaimSuccess(CLAIM_AMOUNT, paymentData.transaction, paymentData.network || 'eip155:84532');
+          return;
+        } else {
+          throw new Error('Ownership claim failed: no transaction returned');
+        }
+      } catch (signError) {
+        console.warn('Client-side signing error:', signError);
+        claimForm.style.display = 'block';
+        claimLoading.style.display = 'none';
+        alert('Failed to sign payment: ' + signError.message);
+        return;
+      }
+    } else if (response.ok) {
+      const paymentData = await response.json();
+      if (paymentData.success && paymentData.transaction) {
+        await showClaimSuccess(CLAIM_AMOUNT, paymentData.transaction, paymentData.network || 'eip155:84532');
+        return;
+      }
+    } else {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || errorData.error || 'Ownership claim request failed');
+    }
+  } catch (error) {
+    console.error('Ownership claim error:', error);
+    claimForm.style.display = 'block';
+    claimLoading.style.display = 'none';
+    alert('Ownership claim error: ' + error.message);
+  }
+}
+
+async function showClaimSuccess(amount, txHash, network = 'eip155:84532') {
+  document.getElementById('claim-loading').style.display = 'none';
+  const claimSuccess = document.getElementById('claim-success');
+  
+  document.getElementById('claim-tx').textContent = txHash;
+  const txLink = document.getElementById('claim-tx-link');
+  txLink.href = `https://sepolia.basescan.org/tx/${txHash}`;
+  
+  claimSuccess.style.display = 'block';
+  
+  const verificationStatus = document.getElementById('claim-verification-status');
+  if (verificationStatus) {
+    verificationStatus.textContent = 'Verifying on-chain... (this may take a few seconds)';
+    verificationStatus.style.display = 'block';
+    verificationStatus.className = 'verification-status verifying';
+  }
+  
+  verifyTransactionOnChain(txHash, amount, network)
+    .then(isVerified => {
+      if (verificationStatus) {
+        if (isVerified) {
+          verificationStatus.textContent = '✓ Verified on-chain (trustless)';
+          verificationStatus.className = 'verification-status verified';
+        } else {
+          verificationStatus.textContent = '⚠ Verification pending (transaction exists - check BaseScan)';
+          verificationStatus.className = 'verification-status unverified';
+        }
+      }
+    })
+    .catch(error => {
+      console.warn('On-chain verification error:', error);
+      if (verificationStatus) {
+        verificationStatus.textContent = '⚠ Verification unavailable (transaction hash received - check BaseScan)';
+        verificationStatus.className = 'verification-status unverified';
+      }
+    });
+  
+  // Handle continue button - reload config and show regular payment section
+  document.getElementById('btn-continue-after-claim')?.addEventListener('click', async () => {
+    await loadStoreConfig(); // Reload to get updated config with owner
+    window.location.reload(); // Simple reload to switch to payment section
+  });
+}
 
 async function handlePayment() {
   const paymentContent = document.getElementById('payment-content');
