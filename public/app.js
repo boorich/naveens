@@ -655,32 +655,43 @@ async function showPaymentSuccess(amount, txHash, network = 'eip155:84532') {
   
   // Show "Verifying on-chain..." state
   const verificationStatus = document.getElementById('verification-status');
+  const basescanLink = document.getElementById('basescan-link');
+  
   if (verificationStatus) {
-    verificationStatus.textContent = 'Verifying on-chain...';
+    verificationStatus.textContent = 'Verifying on-chain... (this may take a few seconds)';
     verificationStatus.style.display = 'block';
     verificationStatus.className = 'verification-status verifying';
   }
   
+  // Show BaseScan link immediately (transaction exists, just waiting for confirmation)
+  if (basescanLink) {
+    basescanLink.href = `https://sepolia.basescan.org/tx/${txHash}`;
+    basescanLink.textContent = 'View on BaseScan';
+    basescanLink.target = '_blank';
+    basescanLink.style.display = 'inline';
+  }
+  
   // Verify transaction on-chain independently (trustless verification)
-  try {
-    const isVerified = await verifyTransactionOnChain(txHash, amount, network);
-    
-    if (verificationStatus) {
-      if (isVerified) {
-        verificationStatus.textContent = '✓ Verified on-chain (trustless)';
-        verificationStatus.className = 'verification-status verified';
-      } else {
-        verificationStatus.textContent = '⚠ Could not verify on-chain';
+  // This runs in the background and updates status when done
+  verifyTransactionOnChain(txHash, amount, network)
+    .then(isVerified => {
+      if (verificationStatus) {
+        if (isVerified) {
+          verificationStatus.textContent = '✓ Verified on-chain (trustless)';
+          verificationStatus.className = 'verification-status verified';
+        } else {
+          verificationStatus.textContent = '⚠ Verification pending (transaction exists - check BaseScan)';
+          verificationStatus.className = 'verification-status unverified';
+        }
+      }
+    })
+    .catch(error => {
+      console.warn('On-chain verification error:', error);
+      if (verificationStatus) {
+        verificationStatus.textContent = '⚠ Verification unavailable (transaction hash received - check BaseScan)';
         verificationStatus.className = 'verification-status unverified';
       }
-    }
-  } catch (error) {
-    console.warn('On-chain verification failed:', error);
-    if (verificationStatus) {
-      verificationStatus.textContent = '⚠ Verification unavailable (but transaction hash received)';
-      verificationStatus.className = 'verification-status unverified';
-    }
-  }
+    });
   
   document.getElementById('payment-section').scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
@@ -688,6 +699,7 @@ async function showPaymentSuccess(amount, txHash, network = 'eip155:84532') {
 /**
  * Verify transaction on-chain independently (trustless verification)
  * Queries blockchain RPC directly - doesn't trust server's word
+ * Retries with exponential backoff to handle transaction confirmation delays
  * 
  * @param {string} txHash - Transaction hash
  * @param {number} expectedAmount - Expected USDC amount
@@ -707,56 +719,73 @@ async function verifyTransactionOnChain(txHash, expectedAmount, network = 'eip15
     // For other networks, we'd need to detect from network identifier
     let rpcUrl = 'https://sepolia.base.org'; // Base Sepolia public RPC
     
-    // If network is eip155:84532 (Base Sepolia), use Base Sepolia RPC
-    // For other networks, you'd need different RPC endpoints
+    // Retry logic: transactions may take a moment to be confirmed
+    // Base Sepolia can be slower than mainnet, so we retry with delays
+    const maxRetries = 5;
+    const initialDelay = 1000; // Start with 1 second
     
-    // Direct JSON-RPC call to verify transaction (works in browser without dependencies)
-    const response = await fetch(rpcUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        jsonrpc: '2.0',
-        id: 1,
-        method: 'eth_getTransactionReceipt',
-        params: [txHash],
-      }),
-    });
-    
-    if (!response.ok) {
-      console.warn('RPC request failed:', response.status);
-      return false;
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+      // Wait before checking (except first attempt)
+      if (attempt > 0) {
+        const delay = initialDelay * Math.pow(2, attempt - 1); // Exponential backoff: 1s, 2s, 4s, 8s
+        console.log(`Waiting ${delay}ms before verification attempt ${attempt + 1}...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+      
+      // Direct JSON-RPC call to verify transaction (works in browser without dependencies)
+      const response = await fetch(rpcUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          jsonrpc: '2.0',
+          id: 1,
+          method: 'eth_getTransactionReceipt',
+          params: [txHash],
+        }),
+      });
+      
+      if (!response.ok) {
+        console.warn(`RPC request failed (attempt ${attempt + 1}):`, response.status);
+        continue; // Try again
+      }
+      
+      const data = await response.json();
+      if (!data.result) {
+        console.log(`Transaction not found yet (attempt ${attempt + 1}/${maxRetries}), retrying...`);
+        continue; // Transaction not confirmed yet, retry
+      }
+      
+      const receipt = data.result;
+      
+      // Verify transaction status (0x1 = success, 0x0 = failure)
+      if (receipt.status !== '0x1') {
+        console.warn('Transaction failed:', txHash, receipt.status);
+        return false; // Transaction failed, no point retrying
+      }
+      
+      // Verify transaction is confirmed (has block number)
+      if (!receipt.blockNumber) {
+        console.log(`Transaction not confirmed yet (attempt ${attempt + 1}/${maxRetries}), retrying...`);
+        continue; // Not confirmed yet, retry
+      }
+      
+      // Transaction verified on-chain - user can click through to BaseScan for full details
+      // BaseScan shows: recipient, amount, USDC transfer logs, everything they need
+      console.log('Transaction verified on-chain:', {
+        txHash,
+        blockNumber: receipt.blockNumber,
+        status: receipt.status,
+        attempts: attempt + 1,
+        viewOnBaseScan: `https://sepolia.basescan.org/tx/${txHash}`,
+      });
+      
+      return true;
     }
     
-    const data = await response.json();
-    if (!data.result) {
-      console.warn('Transaction not found:', txHash);
-      return false;
-    }
-    
-    const receipt = data.result;
-    
-    // Verify transaction status (0x1 = success, 0x0 = failure)
-    if (receipt.status !== '0x1') {
-      console.warn('Transaction failed:', txHash);
-      return false;
-    }
-    
-    // Verify transaction is confirmed (has block number)
-    if (!receipt.blockNumber) {
-      console.warn('Transaction not confirmed yet:', txHash);
-      return false;
-    }
-    
-    // Transaction verified on-chain - user can click through to BaseScan for full details
-    // BaseScan shows: recipient, amount, USDC transfer logs, everything they need
-    console.log('Transaction verified on-chain:', {
-      txHash,
-      blockNumber: receipt.blockNumber,
-      status: receipt.status,
-      viewOnBaseScan: `https://sepolia.basescan.org/tx/${txHash}`,
-    });
-    
-    return true;
+    // All retries exhausted
+    console.warn(`Transaction verification timeout after ${maxRetries} attempts:`, txHash);
+    console.warn('Transaction may still be pending confirmation. Check BaseScan link.');
+    return false;
   } catch (error) {
     console.error('On-chain verification error:', error);
     return false;
