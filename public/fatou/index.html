@@ -14,10 +14,6 @@
       <h2 class="hero-title">SAMB</h2>
       <p class="hero-subtitle">Executive Virtual Assistant</p>
       <p class="hero-tagline">"Fatou is the person you call when you need everything organized, everyone aligned, and nothing left undone."</p>
-      <div class="hero-cta">
-        <a href="#book-call" class="btn btn-primary">Book a discovery call</a>
-        <a href="mailto:contact@fatousamb.com" class="btn btn-secondary">send an email</a>
-      </div>
     </div>
   </header>
 
@@ -138,7 +134,7 @@
       </div>
 
       <div class="cta-section">
-        <a href="#book-call" class="btn btn-primary">SEE MY WORK samples</a>
+        <a href="#payment-section" class="btn btn-primary">Purchase Hours Now</a>
       </div>
     </div>
   </section>
@@ -261,8 +257,7 @@
   <footer class="footer">
     <div class="container">
       <div class="footer-cta">
-        <a href="#book-call" class="btn btn-primary">Book a discovery call</a>
-        <a href="mailto:contact@fatousamb.com" class="btn btn-secondary">send an email</a>
+        <a href="#payment-section" class="btn btn-primary">Purchase Hours</a>
       </div>
       
       <div class="footer-links">
@@ -286,12 +281,104 @@
     </div>
   </footer>
 
-  <!-- Book Call Modal/Anchor -->
-  <div id="book-call" class="book-call-section">
+  <!-- Payment Section -->
+  <section class="payment-section" id="payment-section">
     <div class="container">
-      <p>To book a discovery call, please <a href="mailto:contact@fatousamb.com">send an email</a> or use your preferred booking platform.</p>
-    </div>
-  </div>
+      <div class="payment-container">
+        <h2 class="section-title">Purchase Hours</h2>
+        <p class="section-intro">Buy hours of Fatou's time. Pay in USDC and get started immediately.</p>
 
+        <div class="payment-content" id="payment-content">
+          <div class="payment-form">
+            <label class="input-label">Select Hours</label>
+            <div class="preset-buttons">
+              <button class="preset-btn active" data-hours="1">1 Hour</button>
+              <button class="preset-btn" data-hours="2">2 Hours</button>
+              <button class="preset-btn" data-hours="5">5 Hours</button>
+              <button class="preset-btn" data-hours="10">10 Hours</button>
+              <button class="preset-btn" data-hours="custom">Custom</button>
+            </div>
+
+            <div class="custom-input-container" id="custom-input-container" style="display: none;">
+              <label for="hours-input" class="input-label">Enter Hours</label>
+              <input 
+                type="number" 
+                id="hours-input" 
+                class="amount-input"
+                min="0.5"
+                step="0.5"
+                placeholder="Enter hours"
+              >
+            </div>
+
+            <div class="usdc-conversion">
+              <span>Amount:</span> <span id="usdc-amount">50.00</span> USDC
+              <span class="rate-note">($50/hour)</span>
+            </div>
+
+            <!-- Private Key Input (shown when payment challenge received) -->
+            <div class="private-key-container" id="private-key-container" style="display: none;">
+              <div class="private-key-warning">
+                <div class="warning-icon">🔐</div>
+                <p>
+                  Your private key will be used to sign the payment and immediately discarded. 
+                  Never stored or sent to the server.
+                </p>
+              </div>
+              <label for="private-key-input" class="input-label">
+                <span>Paste Private Key</span>
+              </label>
+              <input 
+                type="password" 
+                id="private-key-input" 
+                class="private-key-input"
+                placeholder="0x..."
+                autocomplete="off"
+                spellcheck="false"
+              >
+              <div class="private-key-status" id="private-key-status" style="display: none;">
+                <span class="status-icon">✓</span>
+                <span>Ready to sign</span>
+              </div>
+              <p class="helper-text-small">
+                Paste your private key. It will be used to sign this payment and immediately cleared from memory. 
+                The key never leaves your browser.
+              </p>
+            </div>
+
+            <button class="btn btn-primary btn-large" id="btn-pay-usdc">
+              Pay in USDC
+            </button>
+
+            <p class="helper-text">Pay in USDC. Fatou receives it directly and can begin work immediately.</p>
+          </div>
+
+          <!-- Payment Success State -->
+          <div class="payment-success" id="payment-success" style="display: none;">
+            <div class="success-icon">✓</div>
+            <h3>Payment Successful!</h3>
+            <p>Hours purchased successfully</p>
+            <div class="transaction-details">
+              <p><strong>Hours:</strong> <span id="success-hours"></span></p>
+              <p><strong>Amount:</strong> <span id="success-amount"></span> USDC</p>
+              <p><strong>Transaction:</strong> <a id="success-tx-link" class="tx-hash" href="#" target="_blank" rel="noopener noreferrer"><span id="success-tx"></span> ↗</a></p>
+              <p id="verification-status" class="verification-status" style="display: none;"></p>
+            </div>
+            <p class="helper-text-small" style="margin-top: 10px;">
+              Transaction verified independently on-chain. Click the transaction hash above to view on BaseScan.
+            </p>
+          </div>
+
+          <!-- Payment Loading State -->
+          <div class="payment-loading" id="payment-loading" style="display: none;">
+            <div class="loading-spinner"></div>
+            <p>Processing payment...</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <script type="module" src="app.js"></script>
 </body>
 </html>
