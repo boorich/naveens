@@ -6,9 +6,9 @@ node_modules/
 *.log
 npm-debug.log*
 
-# Build artifacts (these are generated, but we might want to commit them for Vercel)
-# Uncomment if you want to ignore build artifacts:
-# public/client-signer.bundle.js
+# Build artifacts
+# NOTE: client-signer.bundle.js is COMMITTED to repo because x402 packages
+# are not published to npm and Vercel can't build it. We commit the bundle.
 # public/client-signer.bundle.js.map
 
 # Local development files
