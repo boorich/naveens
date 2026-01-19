@@ -340,13 +340,24 @@ app.post('/api/pay', async (req, res) => {
         
         if (hasNoOwner && settlementResult.proof?.payer) {
           // First payment - set payer as owner (opt-in)
-          console.log(`🎉 First payment opt-in: ${settlementResult.proof.payer} is now the owner`);
+          const ownerAddress = settlementResult.proof.payer;
+          console.log(`🎉 First payment opt-in: ${ownerAddress} is now the owner`);
           const updatedConfig = {
             ...config,
-            owner: settlementResult.proof.payer,
+            owner: ownerAddress,
           };
-          if (saveStoreConfig(updatedConfig)) {
-            console.log('✅ Owner set in config.json from first payment');
+          const saved = saveStoreConfig(updatedConfig);
+          if (saved) {
+            console.log('✅ Owner set in config.json from first payment:', ownerAddress);
+            // Verify it was saved
+            const verifyConfig = loadStoreConfig();
+            if (verifyConfig?.owner === ownerAddress) {
+              console.log('✅ Verified: Owner saved correctly');
+            } else {
+              console.error('❌ WARNING: Owner save verification failed! Expected:', ownerAddress, 'Got:', verifyConfig?.owner);
+            }
+          } else {
+            console.error('❌ Failed to save owner to config.json!');
           }
         }
         

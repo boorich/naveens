@@ -289,22 +289,30 @@ async function handleClaimOwnership() {
         
         // Payment succeeded - owner may have been set even if transaction hash is missing
         if (paymentData.success) {
+          // Owner was set! Reload config and go directly to edit form
           if (paymentData.ownerOptIn) {
-            // Owner was set! Reload config to show regular payment section
+            // Force reload config from server (with owner now set)
             await loadStoreConfig();
+            
+            // Hide claim section, show payment section
+            document.getElementById('claim-ownership-section').style.display = 'none';
+            document.getElementById('payment-section').style.display = 'block';
+            
+            // Setup edit button now that owner exists
+            setupEditButton();
           }
           
-          // Show success even if transaction is missing - payment was processed
-          if (paymentData.transaction) {
-            await showClaimSuccess(CLAIM_AMOUNT, paymentData.transaction, paymentData.network || 'eip155:84532');
-          } else {
-            // Payment succeeded but no transaction hash - still show success
-            // The owner was set (if it was the first payment), that's what matters
-            console.warn('Payment succeeded but transaction hash missing:', paymentData.warning);
-            alert(`✅ Ownership claimed! Payment processed successfully.\n\n${paymentData.warning || 'Note: Transaction hash not available. Your ownership has been set.'}\n\nClick "Edit" to customize your cash register.`);
-            // Reload page to show regular payment section
-            window.location.reload();
-          }
+          // Show brief success message, then directly open edit modal
+          const successMsg = paymentData.transaction 
+            ? `✅ Ownership claimed! Transaction: ${paymentData.transaction.substring(0, 10)}...`
+            : `✅ Ownership claimed! Payment processed successfully.`;
+          
+          // Small delay to show success, then open edit
+          alert(successMsg + '\n\nOpening edit form to customize your cash register...');
+          
+          // Open edit modal directly
+          showEditModal();
+          
           return;
         } else {
           // Payment failed
