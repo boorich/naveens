@@ -89,7 +89,7 @@ function setupEditButton() {
     // Remove existing listeners to avoid duplicates
     const newBtn = editBtn.cloneNode(true);
     editBtn.parentNode.replaceChild(newBtn, editBtn);
-    document.getElementById('btn-edit').addEventListener('click', () => showEditModal());
+    document.getElementById('btn-edit').addEventListener('click', async () => await showEditModal());
   }
 }
 
@@ -310,8 +310,8 @@ async function handleClaimOwnership() {
           // Small delay to show success, then open edit
           alert(successMsg + '\n\nOpening edit form to customize your cash register...');
           
-          // Open edit modal directly
-          showEditModal();
+          // Open edit modal directly (async)
+          await showEditModal();
           
           return;
         } else {
@@ -621,7 +621,11 @@ async function verifyTransactionOnChain(txHash, expectedAmount, network = 'eip15
 }
 
 // Edit Modal
-function showEditModal() {
+async function showEditModal() {
+  // Always reload config from server before showing edit modal
+  // This ensures we have the latest owner address (important on Vercel/serverless)
+  await loadStoreConfig();
+  
   document.getElementById('edit-modal').style.display = 'flex';
   
   // Load current values
