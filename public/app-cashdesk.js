@@ -285,11 +285,15 @@ async function handleClaimOwnership() {
         }
 
         const paymentData = await paymentResponse.json();
+        console.log('Payment response data:', paymentData);
+        
         if (paymentData.success && paymentData.transaction) {
           await showClaimSuccess(CLAIM_AMOUNT, paymentData.transaction, paymentData.network || 'eip155:84532');
           return;
         } else {
-          throw new Error('Ownership claim failed: no transaction returned');
+          // Better error message with actual response
+          console.error('Payment response missing transaction:', paymentData);
+          throw new Error(`Ownership claim failed: ${paymentData.error || paymentData.message || 'no transaction returned'}. Response: ${JSON.stringify(paymentData)}`);
         }
       } catch (signError) {
         console.warn('Client-side signing error:', signError);

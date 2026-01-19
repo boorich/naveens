@@ -307,6 +307,15 @@ app.post('/api/pay', async (req, res) => {
       );
 
       if (settlementResult.status === 'settled') {
+        // Check that we have a transaction hash
+        if (!settlementResult.proof || !settlementResult.proof.transaction) {
+          console.error('Settlement result missing transaction:', settlementResult);
+          return res.status(500).json({
+            error: 'Payment settled but no transaction hash returned',
+            debug: settlementResult,
+          });
+        }
+        
         // First payment opt-in: If no owner is set, the first payer becomes the owner
         const config = loadStoreConfig();
         const hasNoOwner = !config.owner || 
@@ -332,21 +341,25 @@ app.post('/api/pay', async (req, res) => {
         return res.json({
           success: true,
           transaction: settlementResult.proof.transaction,
-          network: settlementResult.proof.network,
+          network: settlementResult.proof.network || 'eip155:84532',
           amount: amount,
           ownerOptIn: hasNoOwner && settlementResult.proof.payer ? true : undefined,
         });
       }
 
       // Should not reach here
+      console.error('Payment processing returned unexpected status:', settlementResult.status);
       return res.status(500).json({
         error: 'Unexpected payment state',
+        status: settlementResult.status,
       });
     } catch (paymentError) {
       console.error('Payment processing error:', paymentError);
+      console.error('Payment error stack:', paymentError.stack);
       return res.status(402).json({
         error: 'Payment Processing Error',
         message: paymentError.message || 'Failed to process payment',
+        details: paymentError.toString(),
       });
     }
   } catch (error) {
