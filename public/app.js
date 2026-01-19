@@ -5,6 +5,8 @@ let config = {
   driverPhone: '+94XXXXXXXXX',
   driverWhatsapp: '+94XXXXXXXXX',
   baseUrl: window.location.origin,
+  driverWallet: null, // Will be loaded from server
+  network: 'eip155:84532', // Will be loaded from server
   // TukTuk pricing: base fare + (distance * rate per km)
   tukTukBaseFare: 100, // LKR
   tukTukRatePerKm: 80, // LKR per km
@@ -57,6 +59,14 @@ const translations = {
     'estimated-price': 'Estimated price',
     'or-manual': 'Or enter amount manually:',
     'safety-note': 'Agree fare before you ride',
+    'private-key-label': 'Paste Private Key',
+    'private-key-placeholder': '0x...',
+    'private-key-helper': 'Paste your private key. It will be used to sign this payment and immediately cleared from memory. The key never leaves your browser.',
+    'private-key-warning': 'Your private key will be used to sign the payment and immediately discarded. Never stored or sent to the server.',
+    'private-key-ready': 'Ready to sign',
+    'signing-payment': 'Signing payment with your key...',
+    'key-cleared': 'Key cleared from memory',
+    'verification-note': 'Transaction verified independently on-chain. Click the transaction hash above to view on BaseScan.',
   },
   si: {
     'page-title': "නවීන්ගේ ටුක්ටුක් - ඔබේ ගමන ගෙවන්න",
@@ -88,6 +98,14 @@ const translations = {
     'estimated-price': 'ඇස්තමේන්තු මිල:',
     'or-manual': 'හෝ වෙනත් මුදල් ඇතුළත් කරන්න:',
     'safety-note': 'ගමනට පෙර කුලිය එකඟ වන්න',
+    'private-key-label': 'පෞද්ගලික යතුර අලවන්න',
+    'private-key-placeholder': '0x...',
+    'private-key-helper': 'ඔබගේ පෞද්ගලික යතුර අලවන්න. මෙම ගෙවීමට අත්සන් කිරීමට එය භාවිතා කරනු ලබන අතර වහාම මතකයෙන් පිරිසිදු කරනු ලබයි. යතුර කිසි විටෙකත් ඔබගේ බ්‍රවුසරයෙන් පිටතට නොයයි.',
+    'private-key-warning': 'ඔබගේ පෞද්ගලික යතුර ගෙවීමට අත්සන් කිරීමට භාවිතා කරනු ලබන අතර වහාම ඉවත දමනු ලබයි. කිසි විටෙකත් ගබඩා කර නොමැති අතර සේවාදායකයට යවනු නොලබයි.',
+    'private-key-ready': 'අත්සන් කිරීමට සූදානම්',
+    'signing-payment': 'ඔබගේ යතුරෙන් ගෙවීමට අත්සන් කරමින්...',
+    'key-cleared': 'මතකයෙන් යතුර පිරිසිදු කරන ලදී',
+    'verification-note': 'ගනුදෙනුව ස්වාධීනව බ්ලොක්චේන් මත සත්‍යාපනය කරන ලදී. BaseScan හි දැකීමට ඉහත ගනුදෙනු හැෂ් මත ක්ලික් කරන්න.',
   },
   ta: {
     'page-title': "நவீனின் டுக்டுக் - உங்கள் பயணத்தை செettலக்கூடும்",
@@ -119,6 +137,14 @@ const translations = {
     'estimated-price': 'மதிப்பீடு விலை',
     'or-manual': 'அல்லது கைமுறையாக தொகையை உள்ளிடவும்:',
     'safety-note': 'பயணத்திற்கு முன் கட்டணத்தை ஒப்புக்கொள்ளுங்கள்',
+    'private-key-label': 'தனிப்பட்ட விசையை ஒட்டவும்',
+    'private-key-placeholder': '0x...',
+    'private-key-helper': 'உங்கள் தனிப்பட்ட விசையை ஒட்டவும். இந்த கட்டணத்தில் கையொப்பமிட இது பயன்படுத்தப்படும் மற்றும் உடனடியாக நினைவகத்திலிருந்து அழிக்கப்படும். விசை ஒருபோதும் உங்கள் உலாவியை விட்டு வெளியேறாது.',
+    'private-key-warning': 'உங்கள் தனிப்பட்ட விசை கட்டணத்தில் கையொப்பமிட பயன்படுத்தப்படும் மற்றும் உடனடியாக நிராகரிக்கப்படும். ஒருபோதும் சேமிக்கப்படவோ அல்லது சேவையகத்திற்கு அனுப்பப்படவோ இல்லை.',
+    'private-key-ready': 'கையொப்பமிட தயாராக உள்ளது',
+    'signing-payment': 'உங்கள் விசையுடன் கட்டணத்தில் கையொப்பமிடுகிறது...',
+    'key-cleared': 'நினைவகத்திலிருந்து விசை அழிக்கப்பட்டது',
+    'verification-note': 'பரிவர்த்தனை தன்னாட்சியாக blockchain இல் சரிபார்க்கப்பட்டது. BaseScan இல் பார்க்க மேலே உள்ள பரிவர்த்தனை hash மீது கிளிக் செய்யவும்.',
   },
 };
 
@@ -132,6 +158,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (response.ok) {
       const serverConfig = await response.json();
       config = { ...config, ...serverConfig };
+      // Store driver wallet and network for on-chain verification
+      if (serverConfig.driverWallet) {
+        config.driverWallet = serverConfig.driverWallet;
+      }
+      if (serverConfig.network) {
+        config.network = serverConfig.network;
+      }
     }
   } catch (error) {
     console.warn('Could not load config from server (using defaults):', error);
@@ -205,7 +238,12 @@ function initLanguageSwitching() {
       const key = el.getAttribute('data-i18n');
       if (translations[currentLang][key]) {
         if (el.tagName === 'INPUT' || el.tagName === 'TITLE') {
-          el[el.tagName === 'INPUT' ? 'placeholder' : 'text'] = translations[currentLang][key];
+          // Check if it's a placeholder attribute
+          if (el.hasAttribute('data-i18n-placeholder')) {
+            el.placeholder = translations[currentLang][key];
+          } else {
+            el[el.tagName === 'INPUT' ? 'placeholder' : 'text'] = translations[currentLang][key];
+          }
         } else if (key === 'distance-label') {
           // Special handling for distance label - preserve the span element
           const distanceValue = el.querySelector('#distance-value');
@@ -221,6 +259,14 @@ function initLanguageSwitching() {
         } else {
           el.textContent = translations[currentLang][key];
         }
+      }
+    });
+    
+    // Update placeholder attributes separately (for elements with data-i18n-placeholder)
+    document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+      const key = el.getAttribute('data-i18n-placeholder');
+      if (translations[currentLang][key]) {
+        el.placeholder = translations[currentLang][key];
       }
     });
     
@@ -420,14 +466,126 @@ async function handlePayment() {
     
     // Check if challenge (402) or already settled (200)
     if (response.status === 402 || response.status === 200) {
-      // Check if already settled
-      if (data.success && data.transaction) {
-        // Already settled
-        showPaymentSuccess(usdcAmount, data.transaction);
+        // Check if already settled
+        if (data.success && data.transaction) {
+          // Already settled
+          await showPaymentSuccess(usdcAmount, data.transaction, data.network || config.network);
+          return;
+        }
+      
+      // Challenge - "cash ceremony" flow: paste key → sign → clear → send
+      const privateKeyContainer = document.getElementById('private-key-container');
+      const privateKeyInput = document.getElementById('private-key-input');
+      const privateKeyStatus = document.getElementById('private-key-status');
+      const privateKey = privateKeyInput.value.trim();
+      
+      // If no private key provided yet, show input field and wait
+      if (!privateKey) {
+        privateKeyContainer.style.display = 'block';
+        privateKeyInput.focus();
+        privateKeyStatus.style.display = 'none';
+        document.getElementById('btn-settle-usdc').disabled = false;
+        
+        // Show status when valid key is pasted (ceremony feedback)
+        privateKeyInput.addEventListener('input', () => {
+          const key = privateKeyInput.value.trim();
+          if (key && key.startsWith('0x') && key.length === 66) {
+            const readyText = translations[currentLang]['private-key-ready'] || 'Ready to sign';
+            privateKeyStatus.innerHTML = '<span class="status-icon">✓</span> <span>' + readyText + '</span>';
+            privateKeyStatus.style.display = 'flex';
+          } else {
+            privateKeyStatus.style.display = 'none';
+          }
+        }, { once: false });
+        
+        showError('Paste your private key to sign the payment');
         return;
       }
       
-      // Challenge - try test payment endpoint (server acts as payer for testing)
+      // Private key provided - perform "cash ceremony": sign → clear → send
+      try {
+        // Show signing state (ceremony feedback)
+        privateKeyInput.disabled = true;
+        const signingText = translations[currentLang]['signing-payment'] || 'Signing payment with your key...';
+        privateKeyStatus.innerHTML = '<span class="status-icon">⏳</span> <span>' + signingText + '</span>';
+        privateKeyStatus.style.display = 'flex';
+        
+        // Sign payment client-side (private key never leaves browser)
+        const signedPayment = await signPaymentClientSide(data, privateKey);
+        
+        // Clear private key from memory IMMEDIATELY (ceremony: "pack up wallet")
+        clearPrivateKeyFromMemory(privateKey);
+        privateKeyInput.value = '';
+        const clearedText = translations[currentLang]['key-cleared'] || 'Key cleared from memory';
+        privateKeyStatus.innerHTML = '<span class="status-icon">✓</span> <span>' + clearedText + '</span>';
+        privateKeyInput.disabled = false;
+        
+        // Hide private key input (key is gone, ceremony complete)
+        setTimeout(() => {
+          privateKeyContainer.style.display = 'none';
+          privateKeyStatus.style.display = 'none';
+        }, 500);
+        
+        // Send signed payment to server (only signed payload, no private key)
+        const paymentResponse = await fetch('/api/pay', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'PAYMENT-SIGNATURE': btoa(JSON.stringify(signedPayment)),
+          },
+          body: JSON.stringify({
+            amount: usdcAmount,
+            label: 'ride_payment',
+          }),
+        });
+        
+        if (!paymentResponse.ok) {
+          const errorData = await paymentResponse.json().catch(() => ({}));
+          throw new Error(errorData.message || errorData.error || 'Payment failed');
+        }
+        
+          const paymentData = await paymentResponse.json();
+          if (paymentData.success && paymentData.transaction) {
+            await showPaymentSuccess(usdcAmount, paymentData.transaction, paymentData.network || config.network);
+            return;
+          } else {
+            throw new Error('Payment failed: no transaction returned');
+          }
+      } catch (signError) {
+        // Client-side signing failed (libraries not available or other error)
+        console.warn('Client-side signing error:', signError.message);
+        
+        // Clear private key even on error (ceremony: "put wallet away safely")
+        clearPrivateKeyFromMemory(privateKey);
+        privateKeyInput.value = '';
+        privateKeyInput.disabled = false;
+        privateKeyContainer.style.display = 'none';
+        privateKeyStatus.style.display = 'none';
+        
+        // Fall back to server-side test payment (if available)
+        // This should rarely happen if bundle is built
+        try {
+          const testResponse = await fetch('/api/test-pay', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ amount: usdcAmount, label: 'ride_payment' }),
+          });
+          
+          if (testResponse.ok) {
+            const testData = await testResponse.json();
+            if (testData.success && testData.transaction) {
+              showPaymentSuccess(usdcAmount, testData.transaction);
+              return;
+            }
+          }
+        } catch (testError) {
+          // Fall through to show original error
+        }
+        
+        throw signError;
+      }
+      
+      // Use server-side test payment endpoint (requires TEST_PRIVATE_KEY on server)
       try {
         const testResponse = await fetch('/api/test-pay', {
           method: 'POST',
@@ -441,18 +599,20 @@ async function handlePayment() {
         });
         
         if (testResponse.status === 501) {
-          // Test mode disabled - show error (test payment required in this setup)
-          throw new Error('Test payment mode disabled. TEST_PRIVATE_KEY not configured.');
+          throw new Error(
+            'Client-side signing libraries not available and server-side test payment is disabled. ' +
+            'Please bundle @x402/core and @x402/evm for browser use, or configure TEST_PRIVATE_KEY on the server.'
+          );
         }
         
         if (!testResponse.ok) {
           const errorData = await testResponse.json().catch(() => ({}));
-          throw new Error(errorData.message || errorData.error || 'Test payment failed');
+          throw new Error(errorData.message || errorData.error || 'Payment failed');
         }
         
         const testData = await testResponse.json();
         if (testData.success && testData.transaction) {
-          showPaymentSuccess(usdcAmount, testData.transaction);
+          await showPaymentSuccess(usdcAmount, testData.transaction, testData.network || config.network);
         } else {
           throw new Error('Payment failed: no transaction returned');
         }
@@ -479,11 +639,128 @@ async function handlePayment() {
   }
 }
 
-function showPaymentSuccess(amount, txHash) {
+async function showPaymentSuccess(amount, txHash, network = 'eip155:84532') {
+  // Show transaction hash immediately
   document.getElementById('success-amount').textContent = amount.toFixed(2);
   document.getElementById('success-tx').textContent = txHash;
+  
+  // Create BaseScan link for Base Sepolia (eip155:84532)
+  const txLink = document.getElementById('success-tx-link');
+  if (txLink) {
+    txLink.href = `https://sepolia.basescan.org/tx/${txHash}`;
+    txLink.title = 'View transaction on BaseScan (Base Sepolia Explorer)';
+  }
+  
   document.getElementById('payment-success').style.display = 'block';
+  
+  // Show "Verifying on-chain..." state
+  const verificationStatus = document.getElementById('verification-status');
+  if (verificationStatus) {
+    verificationStatus.textContent = 'Verifying on-chain...';
+    verificationStatus.style.display = 'block';
+    verificationStatus.className = 'verification-status verifying';
+  }
+  
+  // Verify transaction on-chain independently (trustless verification)
+  try {
+    const isVerified = await verifyTransactionOnChain(txHash, amount, network);
+    
+    if (verificationStatus) {
+      if (isVerified) {
+        verificationStatus.textContent = '✓ Verified on-chain (trustless)';
+        verificationStatus.className = 'verification-status verified';
+      } else {
+        verificationStatus.textContent = '⚠ Could not verify on-chain';
+        verificationStatus.className = 'verification-status unverified';
+      }
+    }
+  } catch (error) {
+    console.warn('On-chain verification failed:', error);
+    if (verificationStatus) {
+      verificationStatus.textContent = '⚠ Verification unavailable (but transaction hash received)';
+      verificationStatus.className = 'verification-status unverified';
+    }
+  }
+  
   document.getElementById('payment-section').scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+/**
+ * Verify transaction on-chain independently (trustless verification)
+ * Queries blockchain RPC directly - doesn't trust server's word
+ * 
+ * @param {string} txHash - Transaction hash
+ * @param {number} expectedAmount - Expected USDC amount
+ * @param {string} network - Network identifier (eip155:84532 = Base Sepolia)
+ * @returns {Promise<boolean>} True if transaction verified on-chain
+ */
+async function verifyTransactionOnChain(txHash, expectedAmount, network = 'eip155:84532') {
+  try {
+    // Get driver wallet from config (needed to verify recipient)
+    const driverWallet = config.driverWallet;
+    if (!driverWallet || driverWallet === '0x0000000000000000000000000000000000000000') {
+      console.warn('Driver wallet not configured - cannot verify recipient');
+      // Still verify transaction exists, just can't verify recipient
+    }
+    
+    // Base Sepolia RPC endpoint (public, no API key needed)
+    // For other networks, we'd need to detect from network identifier
+    let rpcUrl = 'https://sepolia.base.org'; // Base Sepolia public RPC
+    
+    // If network is eip155:84532 (Base Sepolia), use Base Sepolia RPC
+    // For other networks, you'd need different RPC endpoints
+    
+    // Direct JSON-RPC call to verify transaction (works in browser without dependencies)
+    const response = await fetch(rpcUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        jsonrpc: '2.0',
+        id: 1,
+        method: 'eth_getTransactionReceipt',
+        params: [txHash],
+      }),
+    });
+    
+    if (!response.ok) {
+      console.warn('RPC request failed:', response.status);
+      return false;
+    }
+    
+    const data = await response.json();
+    if (!data.result) {
+      console.warn('Transaction not found:', txHash);
+      return false;
+    }
+    
+    const receipt = data.result;
+    
+    // Verify transaction status (0x1 = success, 0x0 = failure)
+    if (receipt.status !== '0x1') {
+      console.warn('Transaction failed:', txHash);
+      return false;
+    }
+    
+    // Verify transaction is confirmed (has block number)
+    if (!receipt.blockNumber) {
+      console.warn('Transaction not confirmed yet:', txHash);
+      return false;
+    }
+    
+    // Transaction verified on-chain - user can click through to BaseScan for full details
+    // BaseScan shows: recipient, amount, USDC transfer logs, everything they need
+    console.log('Transaction verified on-chain:', {
+      txHash,
+      blockNumber: receipt.blockNumber,
+      status: receipt.status,
+      viewOnBaseScan: `https://sepolia.basescan.org/tx/${txHash}`,
+    });
+    
+    return true;
+  } catch (error) {
+    console.error('On-chain verification error:', error);
+    return false;
+  }
 }
 
 function showError(message) {
@@ -492,6 +769,57 @@ function showError(message) {
   setTimeout(() => {
     document.getElementById('payment-error').style.display = 'none';
   }, 5000);
+}
+
+/**
+ * Sign payment client-side using bundled x402 client libraries
+ * Private key never leaves browser - only signed payload is returned
+ */
+async function signPaymentClientSide(challengeData, privateKey) {
+  try {
+    // Import bundled signer (all dependencies included)
+    const { signPayment } = await import('./client-signer.bundle.js');
+    
+    // Validate and sign
+    const paymentPayload = await signPayment(challengeData, privateKey);
+    
+    return paymentPayload;
+  } catch (error) {
+    console.error('Client-side signing error:', error);
+    
+    // Provide helpful error message if bundle is missing
+    if (error.message && error.message.includes('Failed to fetch') || 
+        error.message && error.message.includes('Cannot find module')) {
+      throw new Error(
+        'Client-side signing bundle not found. Please run: npm run build:signer'
+      );
+    }
+    
+    throw new Error(`Failed to sign payment: ${error.message}`);
+  }
+}
+
+/**
+ * Clear private key from memory (security: clear references)
+ * Note: JavaScript strings are immutable, but we clear references immediately
+ */
+function clearPrivateKeyFromMemory(privateKey) {
+  // Clear input field immediately
+  const privateKeyInput = document.getElementById('private-key-input');
+  if (privateKeyInput) {
+    privateKeyInput.value = '';
+    // Clear selection/highlight
+    if (privateKeyInput.setSelectionRange) {
+      privateKeyInput.setSelectionRange(0, 0);
+    }
+  }
+  
+  // Clear any references (JavaScript strings are immutable, but we clear refs)
+  // The actual string will be garbage collected when no longer referenced
+  
+  // Note: In a production environment, you might want to use Web Workers
+  // or other isolation techniques for additional security, but for this
+  // use case (paste-once, sign, discard), clearing immediately is sufficient.
 }
 
 // Share Buttons

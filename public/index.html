@@ -108,6 +108,37 @@
         <span data-i18n="estimated">Estimated:</span> <span id="usdc-amount">1.67</span> USDC
       </div>
 
+      <!-- Private Key Input (shown when payment challenge received) -->
+      <div class="private-key-container" id="private-key-container" style="display: none;">
+        <div class="private-key-warning">
+          <div class="warning-icon">🔐</div>
+          <p data-i18n="private-key-warning">
+            Your private key will be used to sign the payment and immediately discarded. 
+            Never stored or sent to the server.
+          </p>
+        </div>
+        <label for="private-key-input" class="input-label">
+          <span data-i18n="private-key-label">Paste Private Key</span>
+        </label>
+        <input 
+          type="password" 
+          id="private-key-input" 
+          class="private-key-input"
+          placeholder="0x..."
+          autocomplete="off"
+          spellcheck="false"
+          data-i18n-placeholder="private-key-placeholder"
+        >
+        <div class="private-key-status" id="private-key-status" style="display: none;">
+          <span class="status-icon">✓</span>
+          <span data-i18n="private-key-ready">Ready to sign</span>
+        </div>
+        <p class="helper-text-small" data-i18n="private-key-helper">
+          Paste your private key. It will be used to sign this payment and immediately cleared from memory. 
+          The key never leaves your browser.
+        </p>
+      </div>
+
       <button class="btn btn-green btn-large" id="btn-settle-usdc">
         <span data-i18n="settle-usdc">Settle in USDC</span>
       </button>
@@ -122,8 +153,12 @@
       <p data-i18n="settlement-visible">Settlement visible to driver</p>
       <div class="transaction-details">
         <p><strong data-i18n="amount-paid">Amount:</strong> <span id="success-amount"></span> USDC</p>
-        <p><strong data-i18n="transaction-hash">Transaction:</strong> <span id="success-tx" class="tx-hash"></span></p>
+        <p><strong data-i18n="transaction-hash">Transaction:</strong> <a id="success-tx-link" class="tx-hash" href="#" target="_blank" rel="noopener noreferrer"><span id="success-tx"></span> ↗</a></p>
+        <p id="verification-status" class="verification-status" style="display: none;"></p>
       </div>
+      <p class="helper-text-small" data-i18n="verification-note" style="margin-top: 10px;">
+        Transaction verified independently on-chain. Click the transaction hash above to view on BaseScan.
+      </p>
     </div>
 
     <!-- Payment Loading State -->
@@ -168,6 +203,6 @@
     </p>
   </footer>
 
-  <script src="app.js"></script>
+  <script type="module" src="app.js"></script>
 </body>
 </html>

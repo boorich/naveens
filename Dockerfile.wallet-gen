@@ -1,0 +1,15 @@
+# Simple wallet generator Docker container
+# Runs locally - generates keypair and outputs address + private key
+
+FROM node:20-slim
+
+WORKDIR /app
+
+# Install viem (minimal, just for key generation)
+RUN npm install -g viem
+
+# Copy the wallet generator script
+COPY generate-wallet.js /app/
+
+# Run the generator
+CMD ["node", "generate-wallet.js"]

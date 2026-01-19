@@ -45,6 +45,8 @@ app.get('/api/config', (req, res) => {
     driverName: process.env.DRIVER_NAME || 'Driver',
     driverCity: process.env.DRIVER_CITY || 'Sri Lanka',
     driverCountry: process.env.DRIVER_COUNTRY || 'Sri Lanka',
+    driverWallet: paymentConfig.driverWallet, // Needed for on-chain verification
+    network: paymentConfig.network, // Needed for on-chain verification
   });
 });
 
@@ -221,8 +223,14 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok' });
 });
 
-// Start server
-app.listen(PORT, () => {
-  console.log(`🚀 Server running at ${BASE_URL}`);
-  console.log(`📱 Payment mode: ${paymentConfig.x402Mode}`);
-});
+// Start server (only if not running on Vercel)
+// Vercel uses serverless functions, so we don't need to listen on a port
+if (process.env.VERCEL !== '1' && !process.env.VERCEL_ENV) {
+  app.listen(PORT, () => {
+    console.log(`🚀 Server running at ${BASE_URL}`);
+    console.log(`📱 Payment mode: ${paymentConfig.x402Mode}`);
+  });
+}
+
+// Export for Vercel serverless functions
+export default app;

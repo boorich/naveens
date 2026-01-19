@@ -1,5 +1,19 @@
 node_modules/
 .env
+.env.local
+.env.*.local
 .DS_Store
 *.log
 npm-debug.log*
+
+# Build artifacts (these are generated, but we might want to commit them for Vercel)
+# Uncomment if you want to ignore build artifacts:
+# public/client-signer.bundle.js
+# public/client-signer.bundle.js.map
+
+# Local development files
+FIX-LINKS.sh
+INSTALL-X402.md
+SETUP-LINK.md
+SETUP.md
+build.md

@@ -7,16 +7,29 @@
   "scripts": {
     "start": "node server.js",
     "dev": "node server.js",
-    "start:coinbase": "./start-coinbase.sh"
+    "start:coinbase": "./start-coinbase.sh",
+    "build": "npm run build:signer:prod",
+    "build:signer": "node build-client-signer.js",
+    "build:signer:prod": "NODE_ENV=production node build-client-signer.js",
+    "prestart": "npm run build:signer",
+    "predev": "npm run build:signer"
   },
-  "keywords": ["x402", "payment", "tuktuk", "sri-lanka"],
+  "keywords": [
+    "x402",
+    "payment",
+    "tuktuk",
+    "sri-lanka"
+  ],
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "express": "^4.18.2",
-    "dotenv": "^16.4.7",
-    "qrcode": "^1.5.3",
     "axios": "^1.7.9",
+    "dotenv": "^16.4.7",
+    "express": "^4.18.2",
+    "qrcode": "^1.5.3",
     "viem": "^2.21.45"
+  },
+  "devDependencies": {
+    "esbuild": "^0.27.2"
   }
 }
