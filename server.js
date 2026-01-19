@@ -289,11 +289,22 @@ app.post('/api/pay', async (req, res) => {
     // Payment provided - process it
     try {
       // Decode payment payload from header (protocol-specific, but needed for external clients)
-      const paymentData = JSON.parse(
-        Buffer.from(paymentSignatureHeader, 'base64').toString('utf-8')
-      );
+      let paymentData;
+      try {
+        paymentData = JSON.parse(
+          Buffer.from(paymentSignatureHeader, 'base64').toString('utf-8')
+        );
+        console.log('Payment data decoded, keys:', Object.keys(paymentData || {}));
+      } catch (parseError) {
+        console.error('Failed to parse payment signature header:', parseError);
+        return res.status(400).json({
+          error: 'Invalid payment signature format',
+          message: parseError.message,
+        });
+      }
 
       // Get challenge data to process payment
+      console.log('Requesting payment challenge for amount:', amount, 'label:', labelValue);
       const challengeResult = await paymentService.requestPayment(amount, labelValue, paymentConfig);
       if (challengeResult.status !== 'challenge') {
         return res.json({
@@ -305,6 +316,7 @@ app.post('/api/pay', async (req, res) => {
       }
 
       // Process payment (verify + settle)
+      console.log('Processing payment with challenge and payment data...');
       const settlementResult = await paymentService.processPayment(
         amount,
         labelValue,
@@ -312,6 +324,12 @@ app.post('/api/pay', async (req, res) => {
         paymentData,
         paymentConfig
       );
+      console.log('Settlement result:', {
+        status: settlementResult.status,
+        hasProof: !!settlementResult.proof,
+        transaction: settlementResult.proof?.transaction,
+        payer: settlementResult.proof?.payer,
+      });
 
       if (settlementResult.status === 'settled') {
         // Check that we have a transaction hash
