@@ -626,6 +626,21 @@ section {
   border-color: #667eea;
 }
 
+.discount-badge {
+  display: inline-block;
+  background-color: #22c55e;
+  color: #ffffff;
+  font-size: 0.75rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  margin-left: 0.5rem;
+  font-weight: 600;
+}
+
+.preset-btn.active .discount-badge {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
 .custom-input-container {
   margin: 1.5rem 0;
 }
@@ -667,6 +682,8 @@ section {
   font-weight: normal;
   color: #718096;
   margin-left: 0.5rem;
+  display: block;
+  margin-top: 0.25rem;
 }
 
 .btn-large {

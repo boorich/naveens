@@ -1,10 +1,43 @@
 // App Configuration for Fatou
 let config = {
-  hourlyRateUSD: 50, // $50 per hour
+  baseHourlyRateUSD: 25, // Base rate: $25 per hour
   baseUrl: window.location.origin,
   driverWallet: null, // Will be loaded from server
   network: 'eip155:84532', // Will be loaded from server
 };
+
+// Discount tiers: [hours, discount percentage]
+const discountTiers = [
+  { hours: 1, discount: 0 },      // No discount
+  { hours: 5, discount: 10 },    // 10% off for 5+ hours
+  { hours: 10, discount: 15 },   // 15% off for 10+ hours
+  { hours: 20, discount: 20 },  // 20% off for 20+ hours
+];
+
+function getDiscountRate(hours) {
+  // Find the highest tier the hours qualify for
+  let applicableDiscount = 0;
+  for (let i = discountTiers.length - 1; i >= 0; i--) {
+    if (hours >= discountTiers[i].hours) {
+      applicableDiscount = discountTiers[i].discount;
+      break;
+    }
+  }
+  return applicableDiscount;
+}
+
+function calculatePrice(hours) {
+  const basePrice = hours * config.baseHourlyRateUSD;
+  const discount = getDiscountRate(hours);
+  const discountAmount = (basePrice * discount) / 100;
+  const finalPrice = basePrice - discountAmount;
+  return {
+    basePrice,
+    discount,
+    discountAmount,
+    finalPrice,
+  };
+}
 
 let selectedHours = 1;
 let amountSetManually = false;
@@ -66,8 +99,23 @@ hoursInput.addEventListener('input', () => {
 
 // Update USDC amount display
 function updateUSDCAmount() {
-  const usdcAmount = selectedHours * config.hourlyRateUSD;
-  document.getElementById('usdc-amount').textContent = usdcAmount.toFixed(2);
+  const pricing = calculatePrice(selectedHours);
+  const usdcAmountEl = document.getElementById('usdc-amount');
+  const rateNoteEl = document.querySelector('.rate-note');
+  
+  usdcAmountEl.textContent = pricing.finalPrice.toFixed(2);
+  
+  // Update rate note with discount info
+  if (pricing.discount > 0) {
+    const savings = pricing.discountAmount.toFixed(2);
+    rateNoteEl.textContent = `($${config.baseHourlyRateUSD}/hr, ${pricing.discount}% off - save $${savings})`;
+    rateNoteEl.style.color = '#22c55e';
+    rateNoteEl.style.fontWeight = '600';
+  } else {
+    rateNoteEl.textContent = `($${config.baseHourlyRateUSD}/hour)`;
+    rateNoteEl.style.color = '#718096';
+    rateNoteEl.style.fontWeight = 'normal';
+  }
 }
 
 // Pay button
@@ -85,7 +133,8 @@ async function handlePayment() {
     return;
   }
 
-  const usdcAmount = selectedHours * config.hourlyRateUSD;
+  const pricing = calculatePrice(selectedHours);
+  const usdcAmount = pricing.finalPrice;
   
   try {
     // Hide form, show loading
