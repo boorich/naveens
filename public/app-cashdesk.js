@@ -53,9 +53,6 @@ function renderStoreConfig() {
   document.getElementById('product-title').textContent = product.title || 'Purchase';
   document.getElementById('product-description').textContent = product.description || 'Buy and pay in USDC.';
 
-  // Show edit button if we're the owner (simple check - could verify signature)
-  checkIfOwner();
-
   // Setup payment presets
   setupPaymentPresets(product);
   
@@ -63,14 +60,11 @@ function renderStoreConfig() {
   updatePrice();
 }
 
-function checkIfOwner() {
-  // Simple check: if owner wallet is set, show edit button
-  // In production, you might want to check localStorage for session
-  if (storeConfig?.owner && storeConfig.owner !== '0x0000000000000000000000000000000000000000') {
-    const editBtn = document.getElementById('btn-edit');
-    editBtn.style.display = 'inline-block';
-    editBtn.addEventListener('click', () => showEditModal());
-  }
+// Always show Edit button - ownership verification happens when clicked (discrete action)
+function setupEditButton() {
+  const editBtn = document.getElementById('btn-edit');
+  editBtn.style.display = 'inline-block';
+  editBtn.addEventListener('click', () => showEditModal());
 }
 
 function setupPaymentPresets(product) {
@@ -161,9 +155,13 @@ document.getElementById('quantity-input')?.addEventListener('input', (e) => {
 
 // Load client-side signer
 let signPaymentClientSide = null;
+let signMessageClientSide = null;
+let getAddressFromPrivateKey = null;
 try {
   const signerModule = await import('./client-signer.bundle.js');
   signPaymentClientSide = signerModule.signPayment;
+  signMessageClientSide = signerModule.signMessage;
+  getAddressFromPrivateKey = signerModule.getAddressFromPrivateKey;
 } catch (error) {
   console.warn('Client-side signer not available:', error);
 }
@@ -415,19 +413,29 @@ document.getElementById('btn-cancel-edit')?.addEventListener('click', hideEditMo
 
 // Verify ownership
 document.getElementById('btn-verify-ownership')?.addEventListener('click', async () => {
-  const privateKey = document.getElementById('edit-private-key').value.trim();
+  const privateKeyInput = document.getElementById('edit-private-key');
+  const privateKey = privateKeyInput.value.trim();
+  
   if (!privateKey || !privateKey.startsWith('0x') || privateKey.length !== 66) {
-    alert('Invalid private key format');
+    alert('Invalid private key format. Must start with 0x and be 66 characters.');
+    return;
+  }
+
+  if (!signMessageClientSide) {
+    alert('Signing libraries not available. Please ensure client-signer.bundle.js is built.');
     return;
   }
 
   try {
-    // Sign challenge message
-    const { privateKeyToAccount } = await import('viem/accounts');
-    const account = privateKeyToAccount(privateKey);
+    // Get address from private key (for server verification)
+    const ownerAddress = getAddressFromPrivateKey(privateKey);
     
+    // Sign challenge message
     const challengeMessage = `Cash Register Ownership Verification\nTimestamp: ${Date.now()}`;
-    const signature = await account.signMessage({ message: challengeMessage });
+    const signature = await signMessageClientSide(challengeMessage, privateKey);
+
+    // Clear private key immediately after signing (discrete action)
+    privateKeyInput.value = '';
 
     // Verify with server
     const response = await fetch('/api/auth/verify', {
@@ -436,6 +444,7 @@ document.getElementById('btn-verify-ownership')?.addEventListener('click', async
       body: JSON.stringify({
         message: challengeMessage,
         signature: signature,
+        ownerAddress: ownerAddress,
       }),
     });
 
@@ -446,15 +455,13 @@ document.getElementById('btn-verify-ownership')?.addEventListener('click', async
       // Hide auth, show edit form
       document.getElementById('edit-auth').style.display = 'none';
       document.getElementById('edit-form').style.display = 'block';
-      
-      // Clear private key
-      document.getElementById('edit-private-key').value = '';
     } else {
       const error = await response.json();
-      alert('Verification failed: ' + (error.error || 'Invalid signature'));
+      alert('Verification failed: ' + (error.error || 'Invalid signature. Make sure this is the owner wallet.'));
     }
   } catch (error) {
     console.error('Ownership verification error:', error);
+    privateKeyInput.value = ''; // Clear on error too
     alert('Verification failed: ' + error.message);
   }
 });
@@ -511,3 +518,4 @@ document.getElementById('btn-save-config')?.addEventListener('click', async () =
 
 // Initialize
 await loadStoreConfig();
+setupEditButton();

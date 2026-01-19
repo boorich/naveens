@@ -54,6 +54,11 @@ loadStoreConfig();
 app.use(express.json());
 app.use(express.static(join(__dirname, 'public')));
 
+// Serve cashdesk page at root (generic config-driven cash register)
+app.get('/', (req, res) => {
+  res.sendFile(join(__dirname, 'public', 'index-cashdesk.html'));
+});
+
 // Initialize payment providers
 registerProvider('mock', new MockProvider());
 
