@@ -22,18 +22,6 @@ const isProduction = process.env.NODE_ENV === 'production';
 const bundlePath = join(__dirname, 'public/client-signer.bundle.js');
 const entryPoint = join(__dirname, 'lib/payment/client-signer.js');
 
-// Check if x402 packages are available
-function checkX402PackagesAvailable() {
-  try {
-    // Try to resolve the packages
-    import('@x402/core/client');
-    import('@x402/evm/exact/client');
-    return true;
-  } catch (error) {
-    return false;
-  }
-}
-
 // Check if bundle exists and is recent
 function bundleExistsAndRecent() {
   if (!existsSync(bundlePath)) {
@@ -45,19 +33,6 @@ function bundleExistsAndRecent() {
     const bundleStat = statSync(bundlePath);
     const entryStat = statSync(entryPoint);
     return bundleStat.mtime > entryStat.mtime;
-  } catch (error) {
-    return false;
-  }
-}
-
-// Check if packages are available (try actual resolution)
-async function packagesAvailable() {
-  try {
-    // Try to read and parse the entry point to check imports
-    const entryContent = readFileSync(entryPoint, 'utf-8');
-    // Simple check - in a real scenario, we'd need to actually resolve
-    // But esbuild will handle the real resolution
-    return true; // Let esbuild handle the actual check
   } catch (error) {
     return false;
   }
