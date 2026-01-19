@@ -5,7 +5,7 @@ import { dirname, join } from 'path';
 import * as paymentService from './lib/payment/service.js';
 import { registerProvider, getProvider } from './lib/payment/provider.js';
 import { MockProvider } from './lib/payment/providers/mock.js';
-import { X402CoinbaseProvider } from './lib/payment/providers/x402-coinbase.js';
+// Lazy import coinbase provider - only load if needed (x402 packages may not be available)
 import { createTestPayment } from './lib/payment/test-payer.js';
 
 dotenv.config();
@@ -23,10 +23,29 @@ app.use(express.static(join(__dirname, 'public')));
 
 // Initialize payment providers
 registerProvider('mock', new MockProvider());
-registerProvider('x402-coinbase', new X402CoinbaseProvider());
-// Legacy name mapping for backward compatibility (coinbase → x402-coinbase)
-const coinbaseProvider = getProvider('x402-coinbase');
-registerProvider('coinbase', coinbaseProvider);
+
+// Lazy load coinbase provider (only if x402 packages are available)
+let coinbaseProviderLoaded = false;
+async function ensureCoinbaseProvider() {
+  if (coinbaseProviderLoaded) {
+    return;
+  }
+  
+  try {
+    const { X402CoinbaseProvider } = await import('./lib/payment/providers/x402-coinbase.js');
+    const coinbaseProvider = new X402CoinbaseProvider();
+    registerProvider('x402-coinbase', coinbaseProvider);
+    registerProvider('coinbase', coinbaseProvider); // Legacy name mapping
+    coinbaseProviderLoaded = true;
+  } catch (error) {
+    console.warn('⚠️  Coinbase provider not available (x402 packages may not be installed):', error.message);
+    console.warn('   Using mock provider only. Set X402_MODE=mock or install x402 packages.');
+    coinbaseProviderLoaded = false;
+  }
+}
+
+// Try to load coinbase provider immediately (will fail gracefully if packages not available)
+await ensureCoinbaseProvider();
 
 // Config for payment service
 const paymentConfig = {
@@ -53,6 +72,11 @@ app.get('/api/config', (req, res) => {
 // Payment endpoint
 app.post('/api/pay', async (req, res) => {
   try {
+    // Ensure coinbase provider is loaded if needed
+    if (paymentConfig.x402Mode === 'x402-coinbase' || paymentConfig.x402Mode === 'coinbase') {
+      await ensureCoinbaseProvider();
+    }
+    
     const { amount, label } = req.body;
     
     if (typeof amount !== 'number' || amount <= 0) {
@@ -151,6 +175,11 @@ app.post('/api/pay', async (req, res) => {
 // Test payment endpoint - server acts as payer for testing
 // Only works if TEST_PRIVATE_KEY is set
 app.post('/api/test-pay', async (req, res) => {
+  // Ensure coinbase provider is loaded if needed
+  if (paymentConfig.x402Mode === 'x402-coinbase' || paymentConfig.x402Mode === 'coinbase') {
+    await ensureCoinbaseProvider();
+  }
+  
   const testPrivateKey = process.env.TEST_PRIVATE_KEY;
   
   if (!testPrivateKey) {
