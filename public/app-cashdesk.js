@@ -287,13 +287,29 @@ async function handleClaimOwnership() {
         const paymentData = await paymentResponse.json();
         console.log('Payment response data:', paymentData);
         
-        if (paymentData.success && paymentData.transaction) {
-          await showClaimSuccess(CLAIM_AMOUNT, paymentData.transaction, paymentData.network || 'eip155:84532');
+        // Payment succeeded - owner may have been set even if transaction hash is missing
+        if (paymentData.success) {
+          if (paymentData.ownerOptIn) {
+            // Owner was set! Reload config to show regular payment section
+            await loadStoreConfig();
+          }
+          
+          // Show success even if transaction is missing - payment was processed
+          if (paymentData.transaction) {
+            await showClaimSuccess(CLAIM_AMOUNT, paymentData.transaction, paymentData.network || 'eip155:84532');
+          } else {
+            // Payment succeeded but no transaction hash - still show success
+            // The owner was set (if it was the first payment), that's what matters
+            console.warn('Payment succeeded but transaction hash missing:', paymentData.warning);
+            alert(`✅ Ownership claimed! Payment processed successfully.\n\n${paymentData.warning || 'Note: Transaction hash not available. Your ownership has been set.'}\n\nClick "Edit" to customize your cash register.`);
+            // Reload page to show regular payment section
+            window.location.reload();
+          }
           return;
         } else {
-          // Better error message with actual response
-          console.error('Payment response missing transaction:', paymentData);
-          throw new Error(`Ownership claim failed: ${paymentData.error || paymentData.message || 'no transaction returned'}. Response: ${JSON.stringify(paymentData)}`);
+          // Payment failed
+          console.error('Payment response indicates failure:', paymentData);
+          throw new Error(`Ownership claim failed: ${paymentData.error || paymentData.message || 'payment processing failed'}`);
         }
       } catch (signError) {
         console.warn('Client-side signing error:', signError);

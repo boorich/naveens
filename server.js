@@ -332,21 +332,13 @@ app.post('/api/pay', async (req, res) => {
       });
 
       if (settlementResult.status === 'settled') {
-        // Check that we have a transaction hash
-        if (!settlementResult.proof || !settlementResult.proof.transaction) {
-          console.error('Settlement result missing transaction:', settlementResult);
-          return res.status(500).json({
-            error: 'Payment settled but no transaction hash returned',
-            debug: settlementResult,
-          });
-        }
-        
         // First payment opt-in: If no owner is set, the first payer becomes the owner
+        // Do this FIRST even if transaction is missing - payment was settled!
         const config = loadStoreConfig();
         const hasNoOwner = !config.owner || 
                           config.owner === '0x0000000000000000000000000000000000000000';
         
-        if (hasNoOwner && settlementResult.proof.payer) {
+        if (hasNoOwner && settlementResult.proof?.payer) {
           // First payment - set payer as owner (opt-in)
           console.log(`🎉 First payment opt-in: ${settlementResult.proof.payer} is now the owner`);
           const updatedConfig = {
@@ -356,6 +348,21 @@ app.post('/api/pay', async (req, res) => {
           if (saveStoreConfig(updatedConfig)) {
             console.log('✅ Owner set in config.json from first payment');
           }
+        }
+        
+        // Check if we have a transaction hash - but don't fail if missing
+        // Payment was settled, owner was set - that's what matters
+        if (!settlementResult.proof || !settlementResult.proof.transaction) {
+          console.warn('⚠️  Payment settled but no transaction hash - payment succeeded, owner set if applicable');
+          // Still return success since payment was processed
+          return res.json({
+            success: true,
+            transaction: null, // Missing transaction hash
+            network: settlementResult.proof?.network || 'eip155:84532',
+            amount: amount,
+            ownerOptIn: hasNoOwner && settlementResult.proof?.payer ? true : undefined,
+            warning: 'Payment settled but transaction hash not available - check blockchain explorer or try again',
+          });
         }
         
         // Return settlement (protocol compatibility)
