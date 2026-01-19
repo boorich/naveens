@@ -52,12 +52,14 @@ loadStoreConfig();
 
 // Middleware
 app.use(express.json());
-app.use(express.static(join(__dirname, 'public')));
 
 // Serve cashdesk page at root (generic config-driven cash register)
+// MUST come before express.static so it takes precedence over index.html
 app.get('/', (req, res) => {
   res.sendFile(join(__dirname, 'public', 'index-cashdesk.html'));
 });
+
+app.use(express.static(join(__dirname, 'public')));
 
 // Initialize payment providers
 registerProvider('mock', new MockProvider());
