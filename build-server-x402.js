@@ -34,15 +34,17 @@ function bundleExistsAndRecent() {
   }
 }
 
-try {
-  // If bundle exists and is recent, skip building
-  if (bundleExistsAndRecent() && !process.env.FORCE_REBUILD) {
-    console.log('✅ Using existing server bundle (skip build)');
-    console.log(`   Bundle: lib/x402/coinbase.bundle.js`);
-    console.log(`   (Set FORCE_REBUILD=1 to force rebuild)`);
-    process.exit(0);
-  }
+// If bundle exists, skip building (even if not recent - bundle is committed to repo)
+// Only rebuild if FORCE_REBUILD is set
+if (existsSync(bundlePath) && !process.env.FORCE_REBUILD) {
+  console.log('✅ Using existing server bundle (skip build)');
+  console.log(`   Bundle: lib/x402/coinbase.bundle.js`);
+  console.log(`   (Set FORCE_REBUILD=1 to force rebuild)`);
+  process.exit(0);
+}
 
+// Only try to build if FORCE_REBUILD is set OR bundle doesn't exist
+try {
   await build({
     entryPoints: [entryPoint],
     bundle: true,
@@ -67,16 +69,16 @@ try {
   console.log(`   Output: lib/x402/coinbase.bundle.js`);
   console.log(`   Mode: ${isProduction ? 'production' : 'development'}`);
 } catch (error) {
-  // If build fails and bundle exists, warn but don't fail
+  // If build fails but bundle exists, warn but don't fail (use existing bundle)
   if (existsSync(bundlePath)) {
-    console.warn('⚠️  Build failed, but using existing bundle');
+    console.warn('⚠️  Build failed (x402 packages not available), but using existing bundle');
     console.warn(`   Error: ${error.message}`);
-    console.warn(`   Bundle: lib/x402/coinbase.bundle.js (existing)`);
-    process.exit(0);
+    console.warn(`   Bundle: lib/x402/coinbase.bundle.js (existing - committed to repo)`);
+    process.exit(0); // Success - we have a bundle to use
   } else {
     console.error('❌ Failed to bundle server-side x402 provider:', error);
     console.error('   Bundle does not exist and cannot be built.');
-    console.error('   Make sure @x402/core and @x402/evm are linked or published to npm.');
+    console.error('   Make sure @x402/core and @x402/evm are linked or bundle is committed.');
     process.exit(1);
   }
 }
