@@ -104,10 +104,14 @@ const paymentConfig = {
 
 // API endpoint to get store config (editable cash register config)
 app.get('/api/store-config', (req, res) => {
+  // Always reload from disk to get latest (important on Vercel/serverless)
   const config = loadStoreConfig();
   if (!config) {
     return res.status(404).json({ error: 'Store config not found' });
   }
+  
+  // Log owner for debugging
+  console.log('Returning config, owner:', config.owner);
   
   // Return config (owner address is public - needed for signature verification)
   res.json(config);
