@@ -1,0 +1,24 @@
+{
+  "owner": "0x0000000000000000000000000000000000000000",
+  "profile": {
+    "name": "FATOU",
+    "title": "SAMB",
+    "subtitle": "Executive Virtual Assistant",
+    "tagline": "\"Fatou is the person you call when you need everything organized, everyone aligned, and nothing left undone.\"",
+    "photoUrl": "https://media.licdn.com/dms/image/v2/D4E03AQGAuEmihNmm_w/profile-displayphoto-crop_800_800/B4EZugkreiJoAI-/0/1767925530395?e=1770249600&v=beta&t=knSp8AddKtCNlGOV1nT20C2m8WiTouMsXTaUxqx1M8o"
+  },
+  "product": {
+    "title": "Purchase Hours",
+    "description": "Buy hours of Fatou's time. Pay in USDC and get started immediately.",
+    "basePrice": 25,
+    "currency": "USD",
+    "unit": "hour",
+    "discounts": [
+      { "threshold": 1, "discount": 0 },
+      { "threshold": 5, "discount": 10 },
+      { "threshold": 10, "discount": 15 },
+      { "threshold": 20, "discount": 20 }
+    ],
+    "presets": [1, 5, 10, 20]
+  }
+}

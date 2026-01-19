@@ -2,6 +2,8 @@ import express from 'express';
 import dotenv from 'dotenv';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
+import { readFileSync, writeFileSync, existsSync } from 'fs';
+import { verifyMessage } from 'viem';
 import * as paymentService from './lib/payment/service.js';
 import { registerProvider, getProvider } from './lib/payment/provider.js';
 import { MockProvider } from './lib/payment/providers/mock.js';
@@ -16,6 +18,37 @@ const __dirname = dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 4021;
 const BASE_URL = process.env.BASE_URL || `http://localhost:${PORT}`;
+
+// Load config.json (editable cash register config)
+const CONFIG_PATH = join(__dirname, 'config.json');
+let storeConfig = null;
+
+function loadStoreConfig() {
+  try {
+    if (existsSync(CONFIG_PATH)) {
+      const configData = readFileSync(CONFIG_PATH, 'utf-8');
+      storeConfig = JSON.parse(configData);
+      return storeConfig;
+    }
+  } catch (error) {
+    console.warn('Could not load config.json:', error);
+  }
+  return null;
+}
+
+function saveStoreConfig(config) {
+  try {
+    writeFileSync(CONFIG_PATH, JSON.stringify(config, null, 2), 'utf-8');
+    storeConfig = config;
+    return true;
+  } catch (error) {
+    console.error('Could not save config.json:', error);
+    return false;
+  }
+}
+
+// Load initial config
+loadStoreConfig();
 
 // Middleware
 app.use(express.json());
@@ -48,25 +81,142 @@ async function ensureCoinbaseProvider() {
 await ensureCoinbaseProvider();
 
 // Config for payment service
+// Config for payment service
 const paymentConfig = {
   x402Mode: process.env.X402_MODE === 'coinbase' ? 'x402-coinbase' : (process.env.X402_MODE || 'mock'),
   baseUrl: BASE_URL,
-  driverWallet: process.env.DRIVER_USDC_WALLET || '0x0000000000000000000000000000000000000000',
+  driverWallet: (() => {
+    // Use owner from config.json if available, otherwise fallback to env
+    const cfg = loadStoreConfig();
+    return cfg?.owner || process.env.DRIVER_USDC_WALLET || process.env.OWNER_WALLET || '0x0000000000000000000000000000000000000000';
+  })(),
   lkrPerUsdc: parseFloat(process.env.LKR_PER_USDC || '300'),
   facilitatorUrl: process.env.FACILITATOR_URL,
   network: process.env.NETWORK || 'eip155:84532',
 };
 
-// API endpoint to get config (non-sensitive values for client)
+// API endpoint to get store config (editable cash register config)
+app.get('/api/store-config', (req, res) => {
+  const config = loadStoreConfig();
+  if (!config) {
+    return res.status(404).json({ error: 'Store config not found' });
+  }
+  
+  // Return config (owner address is public - needed for signature verification)
+  res.json(config);
+});
+
+// API endpoint to get payment config (legacy/backward compat)
 app.get('/api/config', (req, res) => {
+  const storeCfg = loadStoreConfig();
+  const ownerWallet = storeCfg?.owner || paymentConfig.driverWallet;
+  
   res.json({
     lkrPerUsdc: paymentConfig.lkrPerUsdc,
     driverName: process.env.DRIVER_NAME || 'Driver',
     driverCity: process.env.DRIVER_CITY || 'Sri Lanka',
     driverCountry: process.env.DRIVER_COUNTRY || 'Sri Lanka',
-    driverWallet: paymentConfig.driverWallet, // Needed for on-chain verification
-    network: paymentConfig.network, // Needed for on-chain verification
+    driverWallet: ownerWallet, // Use owner from config.json or fallback to env
+    network: paymentConfig.network,
   });
+});
+
+// API endpoint to verify ownership and get edit session
+app.post('/api/auth/verify', async (req, res) => {
+  try {
+    const { message, signature } = req.body;
+    
+    if (!message || !signature) {
+      return res.status(400).json({ error: 'Message and signature required' });
+    }
+    
+    const config = loadStoreConfig();
+    if (!config || !config.owner) {
+      return res.status(500).json({ error: 'Store config not configured' });
+    }
+    
+    // Verify signature
+    try {
+      const isValid = await verifyMessage({
+        address: config.owner,
+        message: message,
+        signature: signature,
+      });
+      
+      if (!isValid) {
+        return res.status(401).json({ error: 'Invalid signature' });
+      }
+      
+      // Generate session token (simple timestamp-based for now)
+      const sessionToken = Buffer.from(`${Date.now()}-${config.owner}`).toString('base64');
+      
+      res.json({
+        success: true,
+        sessionToken,
+        expiresAt: Date.now() + (60 * 60 * 1000), // 1 hour
+      });
+    } catch (verifyError) {
+      console.error('Signature verification error:', verifyError);
+      return res.status(400).json({ error: 'Signature verification failed' });
+    }
+  } catch (error) {
+    console.error('Auth verify error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// API endpoint to update store config (requires authenticated session)
+app.post('/api/store-config/update', async (req, res) => {
+  try {
+    const { sessionToken, config: newConfig } = req.body;
+    
+    if (!sessionToken || !newConfig) {
+      return res.status(400).json({ error: 'Session token and config required' });
+    }
+    
+    // Verify session (simple check - in production use proper session management)
+    const currentConfig = loadStoreConfig();
+    if (!currentConfig || !currentConfig.owner) {
+      return res.status(500).json({ error: 'Store config not configured' });
+    }
+    
+    // Decode and verify session token
+    try {
+      const decoded = Buffer.from(sessionToken, 'base64').toString('utf-8');
+      const [timestamp, owner] = decoded.split('-');
+      const expiresAt = parseInt(timestamp) + (60 * 60 * 1000);
+      
+      if (Date.now() > expiresAt) {
+        return res.status(401).json({ error: 'Session expired' });
+      }
+      
+      if (owner !== currentConfig.owner) {
+        return res.status(401).json({ error: 'Invalid session' });
+      }
+    } catch (sessionError) {
+      return res.status(401).json({ error: 'Invalid session token' });
+    }
+    
+    // Validate and merge config
+    const updatedConfig = {
+      ...currentConfig,
+      ...newConfig,
+      owner: currentConfig.owner, // Don't allow changing owner
+    };
+    
+    // Save updated config
+    if (saveStoreConfig(updatedConfig)) {
+      res.json({
+        success: true,
+        config: updatedConfig,
+      });
+    } else {
+      res.status(500).json({ error: 'Failed to save config' });
+    }
+  } catch (error) {
+    console.error('Config update error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
 });
 
 // Payment endpoint

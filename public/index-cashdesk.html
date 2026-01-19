@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title id="page-title">Cash Register</title>
+  <link rel="stylesheet" href="styles-cashdesk.css">
+</head>
+<body>
+  <!-- Hero Section -->
+  <header class="hero">
+    <div class="hero-content">
+      <img id="profile-photo" src="" alt="" class="profile-photo" style="display: none;">
+      <h1 class="hero-name" id="profile-name"></h1>
+      <h2 class="hero-title" id="profile-title" style="display: none;"></h2>
+      <p class="hero-subtitle" id="profile-subtitle" style="display: none;"></p>
+      <p class="hero-tagline" id="profile-tagline" style="display: none;"></p>
+      <button id="btn-edit" class="btn-edit" style="display: none;">Edit</button>
+    </div>
+  </header>
+
+  <!-- Payment Section -->
+  <section class="payment-section" id="payment-section">
+    <div class="container">
+      <div class="payment-container">
+        <h2 class="section-title" id="product-title">Purchase</h2>
+        <p class="section-intro" id="product-description">Buy and pay in USDC.</p>
+
+        <div class="payment-content" id="payment-content">
+          <div class="payment-form">
+            <label class="input-label">Select Quantity</label>
+            <div class="preset-buttons" id="preset-buttons">
+              <!-- Populated by JS -->
+            </div>
+
+            <div class="custom-input-container" id="custom-input-container" style="display: none;">
+              <label for="quantity-input" class="input-label">Enter Quantity</label>
+              <input 
+                type="number" 
+                id="quantity-input" 
+                class="amount-input"
+                min="0.1"
+                step="0.1"
+                placeholder="Enter quantity"
+              >
+            </div>
+
+            <div class="usdc-conversion">
+              <span>Amount:</span> <span id="usdc-amount">0.00</span> USDC
+              <span class="rate-note" id="rate-note"></span>
+            </div>
+
+            <!-- Private Key Input (shown when payment challenge received) -->
+            <div class="private-key-container" id="private-key-container" style="display: none;">
+              <div class="private-key-warning">
+                <div class="warning-icon">🔐</div>
+                <p>
+                  Your private key will be used to sign the payment and immediately discarded. 
+                  Never stored or sent to the server.
+                </p>
+              </div>
+              <label for="private-key-input" class="input-label">
+                <span>Paste Private Key</span>
+              </label>
+              <input 
+                type="password" 
+                id="private-key-input" 
+                class="private-key-input"
+                placeholder="0x..."
+                autocomplete="off"
+                spellcheck="false"
+              >
+              <div class="private-key-status" id="private-key-status" style="display: none;">
+                <span class="status-icon">✓</span>
+                <span>Ready to sign</span>
+              </div>
+              <p class="helper-text-small">
+                Paste your private key. It will be used to sign this payment and immediately cleared from memory. 
+                The key never leaves your browser.
+              </p>
+            </div>
+
+            <button class="btn btn-primary btn-large" id="btn-pay-usdc">
+              Pay in USDC
+            </button>
+
+            <p class="helper-text">Pay in USDC. Payment goes directly to the owner's wallet.</p>
+          </div>
+
+          <!-- Payment Success State -->
+          <div class="payment-success" id="payment-success" style="display: none;">
+            <div class="success-icon">✓</div>
+            <h3>Payment Successful!</h3>
+            <p>Purchase completed successfully</p>
+            <div class="transaction-details">
+              <p><strong>Quantity:</strong> <span id="success-quantity"></span></p>
+              <p><strong>Amount:</strong> <span id="success-amount"></span> USDC</p>
+              <p><strong>Transaction:</strong> <a id="success-tx-link" class="tx-hash" href="#" target="_blank" rel="noopener noreferrer"><span id="success-tx"></span> ↗</a></p>
+              <p id="verification-status" class="verification-status" style="display: none;"></p>
+            </div>
+            <p class="helper-text-small" style="margin-top: 10px;">
+              Transaction verified independently on-chain. Click the transaction hash above to view on BaseScan.
+            </p>
+          </div>
+
+          <!-- Payment Loading State -->
+          <div class="payment-loading" id="payment-loading" style="display: none;">
+            <div class="loading-spinner"></div>
+            <p>Processing payment...</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Edit Modal -->
+  <div class="edit-modal" id="edit-modal" style="display: none;">
+    <div class="edit-modal-content">
+      <div class="edit-modal-header">
+        <h2>Edit Cash Register</h2>
+        <button class="btn-close" id="btn-close-edit">&times;</button>
+      </div>
+      
+      <div class="edit-auth" id="edit-auth">
+        <p>Prove ownership by signing a message with your wallet's private key.</p>
+        <label class="input-label">Private Key</label>
+        <input 
+          type="password" 
+          id="edit-private-key"
+          class="private-key-input"
+          placeholder="0x..."
+          autocomplete="off"
+        >
+        <button class="btn btn-primary" id="btn-verify-ownership">Verify Ownership</button>
+        <p class="helper-text-small">Your private key is used once to sign a message and is immediately discarded.</p>
+      </div>
+
+      <div class="edit-form" id="edit-form" style="display: none;">
+        <div class="edit-section">
+          <h3>Profile</h3>
+          <label>Name</label>
+          <input type="text" id="edit-name" class="edit-input">
+          
+          <label>Title/Subtitle (optional)</label>
+          <input type="text" id="edit-title" class="edit-input" placeholder="Optional">
+          
+          <label>Tagline (optional)</label>
+          <textarea id="edit-tagline" class="edit-input" rows="3" placeholder="Optional"></textarea>
+          
+          <label>Photo URL</label>
+          <input type="text" id="edit-photo" class="edit-input" placeholder="https://...">
+        </div>
+
+        <div class="edit-section">
+          <h3>Product</h3>
+          <label>Product Title</label>
+          <input type="text" id="edit-product-title" class="edit-input">
+          
+          <label>Product Description</label>
+          <textarea id="edit-product-desc" class="edit-input" rows="2"></textarea>
+          
+          <label>Base Price (USD)</label>
+          <input type="number" id="edit-base-price" class="edit-input" min="0" step="0.01">
+          
+          <label>Unit</label>
+          <input type="text" id="edit-unit" class="edit-input" placeholder="hour, item, etc.">
+        </div>
+
+        <div class="edit-actions">
+          <button class="btn btn-primary" id="btn-save-config">Save Changes</button>
+          <button class="btn btn-secondary" id="btn-cancel-edit">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="app-cashdesk.js"></script>
+</body>
+</html>
