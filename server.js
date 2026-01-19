@@ -255,7 +255,14 @@ app.post('/api/pay', async (req, res) => {
 
     // Check if payment is already provided (PAYMENT-SIGNATURE header)
     // This header is protocol-specific, but we need to check for it to support external clients
-    const paymentSignatureHeader = req.headers['payment-signature'] || req.headers['x-payment'];
+    // Express lowercases headers, so 'PAYMENT-SIGNATURE' becomes 'payment-signature'
+    const paymentSignatureHeader = req.headers['payment-signature'] || 
+                                   req.headers['x-payment'] ||
+                                   req.headers['x-payment-signature'];
+    
+    if (paymentSignatureHeader) {
+      console.log('Payment signature header received, length:', paymentSignatureHeader.length);
+    }
     
     if (!paymentSignatureHeader) {
       // No payment provided - return challenge
