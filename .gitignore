@@ -7,9 +7,10 @@ node_modules/
 npm-debug.log*
 
 # Build artifacts
-# NOTE: client-signer.bundle.js is COMMITTED to repo because x402 packages
-# are not published to npm and Vercel can't build it. We commit the bundle.
+# NOTE: Both bundles are COMMITTED to repo because x402 packages
+# are not published to npm and Vercel can't build them. We commit the bundles.
 # public/client-signer.bundle.js.map
+# lib/x402/coinbase.bundle.js.map (if sourcemaps are generated)
 
 # Local development files
 FIX-LINKS.sh

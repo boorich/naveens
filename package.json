@@ -8,11 +8,13 @@
     "start": "node server.js",
     "dev": "node server.js",
     "start:coinbase": "./start-coinbase.sh",
-    "build": "npm run build:signer:prod",
+    "build": "npm run build:signer:prod && npm run build:server:prod",
     "build:signer": "node build-client-signer.js",
     "build:signer:prod": "NODE_ENV=production node build-client-signer.js",
-    "prestart": "npm run build:signer",
-    "predev": "npm run build:signer"
+    "build:server": "node build-server-x402.js",
+    "build:server:prod": "NODE_ENV=production node build-server-x402.js",
+    "prestart": "npm run build:signer && npm run build:server",
+    "predev": "npm run build:signer && npm run build:server"
   },
   "keywords": [
     "x402",
