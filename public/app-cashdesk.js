@@ -265,7 +265,11 @@ async function handlePayment() {
 
         const paymentData = await paymentResponse.json();
         if (paymentData.success && paymentData.transaction) {
-          await showPaymentSuccess(selectedQuantity, usdcAmount, paymentData.transaction, paymentData.network || 'eip155:84532');
+          // Reload config in case owner was set (first payment opt-in)
+          if (paymentData.ownerOptIn) {
+            await loadStoreConfig();
+          }
+          await showPaymentSuccess(selectedQuantity, usdcAmount, paymentData.transaction, paymentData.network || 'eip155:84532', paymentData.ownerOptIn);
           return;
         } else {
           throw new Error('Payment failed: no transaction returned');
@@ -280,7 +284,11 @@ async function handlePayment() {
     } else if (response.ok) {
       const paymentData = await response.json();
       if (paymentData.success && paymentData.transaction) {
-        await showPaymentSuccess(selectedQuantity, usdcAmount, paymentData.transaction, paymentData.network || 'eip155:84532');
+        // Reload config in case owner was set (first payment opt-in)
+        if (paymentData.ownerOptIn) {
+          await loadStoreConfig();
+        }
+        await showPaymentSuccess(selectedQuantity, usdcAmount, paymentData.transaction, paymentData.network || 'eip155:84532', paymentData.ownerOptIn);
         return;
       }
     } else {
@@ -295,7 +303,7 @@ async function handlePayment() {
   }
 }
 
-async function showPaymentSuccess(quantity, amount, txHash, network = 'eip155:84532') {
+async function showPaymentSuccess(quantity, amount, txHash, network = 'eip155:84532', ownerOptIn = false) {
   document.getElementById('payment-loading').style.display = 'none';
   const paymentSuccess = document.getElementById('payment-success');
   const product = storeConfig?.product || {};
@@ -306,6 +314,18 @@ async function showPaymentSuccess(quantity, amount, txHash, network = 'eip155:84
   
   const txLink = document.getElementById('success-tx-link');
   txLink.href = `https://sepolia.basescan.org/tx/${txHash}`;
+  
+  // Show opt-in message if this was the first payment
+  if (ownerOptIn) {
+    const optInMsg = document.createElement('div');
+    optInMsg.className = 'opt-in-notice';
+    optInMsg.innerHTML = `
+      <div style="background: #22c55e; color: white; padding: 12px; border-radius: 8px; margin-bottom: 16px; font-weight: 600;">
+        🎉 You're now the owner! This was the first payment. Click "Edit" to customize this cash register.
+      </div>
+    `;
+    paymentSuccess.insertBefore(optInMsg, paymentSuccess.firstChild);
+  }
   
   paymentSuccess.style.display = 'block';
   

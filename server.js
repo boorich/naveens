@@ -139,7 +139,14 @@ app.post('/api/auth/verify', async (req, res) => {
     
     const config = loadStoreConfig();
     if (!config || !config.owner) {
-      return res.status(500).json({ error: 'Store config not configured' });
+      return res.status(500).json({ error: 'Store config not configured - no owner set' });
+    }
+    
+    // Check if owner is the zero address (not a valid owner)
+    if (config.owner === '0x0000000000000000000000000000000000000000' || !config.owner.startsWith('0x')) {
+      return res.status(400).json({ 
+        error: 'Owner not set. Make the first payment to this cash register to claim ownership. The first payer becomes the owner.' 
+      });
     }
     
     // Verify signature
@@ -296,6 +303,23 @@ app.post('/api/pay', async (req, res) => {
       );
 
       if (settlementResult.status === 'settled') {
+        // First payment opt-in: If no owner is set, the first payer becomes the owner
+        const config = loadStoreConfig();
+        const hasNoOwner = !config.owner || 
+                          config.owner === '0x0000000000000000000000000000000000000000';
+        
+        if (hasNoOwner && settlementResult.proof.payer) {
+          // First payment - set payer as owner (opt-in)
+          console.log(`🎉 First payment opt-in: ${settlementResult.proof.payer} is now the owner`);
+          const updatedConfig = {
+            ...config,
+            owner: settlementResult.proof.payer,
+          };
+          if (saveStoreConfig(updatedConfig)) {
+            console.log('✅ Owner set in config.json from first payment');
+          }
+        }
+        
         // Return settlement (protocol compatibility)
         const settlementJson = JSON.stringify(settlementResult.proof);
         const settlementBase64 = Buffer.from(settlementJson).toString('base64');
@@ -306,6 +330,7 @@ app.post('/api/pay', async (req, res) => {
           transaction: settlementResult.proof.transaction,
           network: settlementResult.proof.network,
           amount: amount,
+          ownerOptIn: hasNoOwner && settlementResult.proof.payer ? true : undefined,
         });
       }
 
