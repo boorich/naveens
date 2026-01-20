@@ -38,11 +38,21 @@ function loadStoreConfig() {
 
 function saveStoreConfig(config) {
   try {
+    // On Vercel/serverless, filesystem is read-only except /tmp
+    // For now, we'll update in-memory config and log a warning
+    if (process.env.VERCEL) {
+      console.warn('⚠️  Running on Vercel - config.json writes are not persisted. Using in-memory config only.');
+      storeConfig = config;
+      return true; // Return true to continue, but config won't persist
+    }
+    
     writeFileSync(CONFIG_PATH, JSON.stringify(config, null, 2), 'utf-8');
     storeConfig = config;
     return true;
   } catch (error) {
     console.error('Could not save config.json:', error);
+    // Still update in-memory config even if file write fails
+    storeConfig = config;
     return false;
   }
 }
@@ -256,7 +266,10 @@ app.post('/api/pay', async (req, res) => {
     }
 
     const labelValue = label || 'ride_payment';
-    const intendedOwner = metadata?.intendedOwner; // For delegate prep: Friend sets owner for New Person
+    // Safely extract intendedOwner from metadata (for delegate prep)
+    const intendedOwner = (metadata && typeof metadata === 'object' && metadata.intendedOwner) 
+      ? String(metadata.intendedOwner).trim() 
+      : null;
 
     // Check if payment is already provided (PAYMENT-SIGNATURE header)
     // This header is protocol-specific, but we need to check for it to support external clients
@@ -400,17 +413,18 @@ app.post('/api/pay', async (req, res) => {
         res.status(200);
         res.set('PAYMENT-RESPONSE', settlementBase64);
         
-        const config = loadStoreConfig();
-        const wasNoOwner = !config.owner || config.owner === '0x0000000000000000000000000000000000000000';
+        // Reload config to get updated owner (in case it was just set)
+        const finalConfig = loadStoreConfig();
+        const wasNoOwner = !finalConfig || !finalConfig.owner || finalConfig.owner === '0x0000000000000000000000000000000000000000';
         
         return res.json({
           success: true,
           transaction: settlementResult.proof.transaction,
           network: settlementResult.proof.network || 'eip155:84532',
           amount: amount,
-          ownerOptIn: wasNoOwner ? true : undefined,
+          ownerOptIn: !wasNoOwner ? true : undefined,
           delegatePrep: intendedOwner ? true : undefined,
-          owner: config.owner, // Return the owner address (for delegate prep, this is intendedOwner)
+          owner: finalConfig?.owner, // Return the owner address (for delegate prep, this is intendedOwner)
         });
       }
 
