@@ -887,6 +887,11 @@ async function copyToClipboard(text, buttonElement) {
   }
 }
 
+// Create share message with wallet address
+function createShareMessage(address) {
+  return `Hey! I need $1 USDC + a tiny bit of ETH (for gas) on Base network to claim my own storefront. Can you send both to this address?\n\n${address}\n\nThanks! 🙏`;
+}
+
 // Handle wallet generation (Step 1)
 async function handleGenerateWallet() {
   if (!generateWalletClientSide) {
@@ -906,6 +911,11 @@ async function handleGenerateWallet() {
     
     // Generate QR code for address
     await generateQRCode(wallet.address, 'qr-code-canvas');
+    
+    // Update share message with actual address
+    const shareMessage = createShareMessage(wallet.address);
+    // Store in a hidden element for easy access
+    document.getElementById('share-message-template').textContent = shareMessage;
   } catch (error) {
     console.error('Wallet generation error:', error);
     alert('Failed to generate wallet: ' + error.message);
@@ -926,9 +936,24 @@ function setupStep2() {
   generateQRCode(wallet.address, 'funding-qr-code-canvas');
   
   // Update share message template
-  const shareMessage = `Hey! I need $1 USDC on Base network. Can you send it to ${wallet.address}?`;
+  const shareMessage = createShareMessage(wallet.address);
   document.getElementById('share-message').value = shareMessage;
 }
+
+// Share handlers for Step 2
+document.getElementById('btn-share-whatsapp-step2')?.addEventListener('click', () => {
+  if (!onboardingModalState.wallet) return;
+  const message = createShareMessage(onboardingModalState.wallet.address);
+  const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
+  window.open(whatsappUrl, '_blank');
+});
+
+document.getElementById('btn-share-sms-step2')?.addEventListener('click', () => {
+  if (!onboardingModalState.wallet) return;
+  const message = createShareMessage(onboardingModalState.wallet.address);
+  const smsUrl = `sms:?body=${encodeURIComponent(message)}`;
+  window.location.href = smsUrl;
+});
 
 // Handle claim ownership from modal (Step 3)
 async function handleClaimOwnershipFromModal() {
@@ -1013,6 +1038,38 @@ document.getElementById('btn-close-onboarding-success')?.addEventListener('click
 });
 
 document.getElementById('btn-generate-wallet')?.addEventListener('click', handleGenerateWallet);
+
+// Share to WhatsApp
+document.getElementById('btn-share-whatsapp')?.addEventListener('click', () => {
+  if (!onboardingModalState.wallet) {
+    alert('Please generate a wallet first.');
+    return;
+  }
+  const message = createShareMessage(onboardingModalState.wallet.address);
+  const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
+  window.open(whatsappUrl, '_blank');
+});
+
+// Share via SMS
+document.getElementById('btn-share-sms')?.addEventListener('click', () => {
+  if (!onboardingModalState.wallet) {
+    alert('Please generate a wallet first.');
+    return;
+  }
+  const message = createShareMessage(onboardingModalState.wallet.address);
+  const smsUrl = `sms:?body=${encodeURIComponent(message)}`;
+  window.location.href = smsUrl;
+});
+
+// Copy share message to clipboard
+document.getElementById('btn-share-copy-message')?.addEventListener('click', () => {
+  if (!onboardingModalState.wallet) {
+    alert('Please generate a wallet first.');
+    return;
+  }
+  const message = createShareMessage(onboardingModalState.wallet.address);
+  copyToClipboard(message, document.getElementById('btn-share-copy-message'));
+});
 
 document.getElementById('btn-continue-step-2')?.addEventListener('click', () => {
   setupStep2();

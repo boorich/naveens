@@ -234,6 +234,9 @@
                   <canvas id="qr-code-canvas"></canvas>
                 </div>
                 
+                <!-- Hidden element to store share message -->
+                <div id="share-message-template" style="display: none;"></div>
+                
                 <div class="security-warning" style="margin-top: 20px; padding: 15px; background: #fff3cd; border-radius: 8px; border-left: 4px solid #ffc107;">
                   <strong>⚠️ Security Reminder:</strong>
                   <ul style="margin: 10px 0 0 20px; text-align: left;">
@@ -243,8 +246,38 @@
                   </ul>
                 </div>
                 
+                <div style="margin-top: 30px; padding: 20px; background: #e7f3ff; border-radius: 8px; border-left: 4px solid #667eea;">
+                  <strong>💰 Need $1 USDC + small amount of ETH</strong>
+                  <p style="margin: 10px 0 0 0; font-size: 0.9rem; line-height: 1.5;">
+                    To claim your storefront, you'll need:<br>
+                    • <strong>$1 USDC</strong> (to claim ownership)<br>
+                    • <strong>~$0.01-0.05 ETH</strong> (for gas fees on Base network)
+                  </p>
+                  <p style="margin: 10px 0 0 0; font-size: 0.85rem; color: #4a5568;">
+                    Ask a friend who has crypto to send both to your address above.
+                  </p>
+                </div>
+                
+                <div style="margin-top: 20px;">
+                  <label class="input-label">Ask a Friend for $1 USDC</label>
+                  <p style="font-size: 0.9rem; color: #4a5568; margin-bottom: 15px;">
+                    Share your address via WhatsApp, SMS, or any messaging app:
+                  </p>
+                  <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                    <button class="btn btn-primary" id="btn-share-whatsapp" style="flex: 1; min-width: 140px;">
+                      📱 WhatsApp
+                    </button>
+                    <button class="btn btn-secondary" id="btn-share-sms" style="flex: 1; min-width: 140px;">
+                      💬 SMS
+                    </button>
+                    <button class="btn btn-secondary" id="btn-share-copy-message" style="flex: 1; min-width: 140px;">
+                      📋 Copy Message
+                    </button>
+                  </div>
+                </div>
+                
                 <button class="btn btn-primary btn-large" id="btn-continue-step-2" style="margin-top: 20px;">
-                  Continue to Step 2
+                  I've received my $1 USDC - Continue
                 </button>
               </div>
             </div>
@@ -282,8 +315,12 @@
               
               <div class="share-template" style="margin-top: 20px;">
                 <label class="input-label">Ready-to-send Message</label>
-                <textarea id="share-message" readonly class="share-message-input" rows="3">Hey! I need $1 USDC on Base network. Can you send it to [YOUR_ADDRESS]?</textarea>
-                <button class="btn btn-secondary" id="btn-copy-share-message" style="margin-top: 10px;">Copy Message</button>
+                <textarea id="share-message" readonly class="share-message-input" rows="4"></textarea>
+                <div style="display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap;">
+                  <button class="btn btn-primary" id="btn-share-whatsapp-step2" style="flex: 1; min-width: 140px;">📱 WhatsApp</button>
+                  <button class="btn btn-secondary" id="btn-share-sms-step2" style="flex: 1; min-width: 140px;">💬 SMS</button>
+                  <button class="btn btn-secondary" id="btn-copy-share-message" style="flex: 1; min-width: 140px;">📋 Copy</button>
+                </div>
               </div>
               
               <button class="btn btn-primary btn-large" id="btn-continue-step-3" style="margin-top: 20px;">
