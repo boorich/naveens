@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title id="page-title">Cash Register</title>
   <link rel="stylesheet" href="styles-cashdesk.css">
+  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
 </head>
 <body>
   <!-- Hero Section -->
@@ -16,6 +17,7 @@
       <p class="hero-subtitle" id="profile-subtitle" style="display: none;"></p>
       <p class="hero-tagline" id="profile-tagline" style="display: none;"></p>
       <button id="btn-edit" class="btn-edit" style="display: none;" title="Owner? Click to edit this page">Edit</button>
+      <a href="#" id="btn-get-storefront" class="link-get-storefront" style="display: block; margin-top: 20px; color: rgba(255, 255, 255, 0.9); text-decoration: underline; font-size: 0.9rem;">Get Your Own Storefront - $1 one-time</a>
     </div>
   </header>
 
@@ -194,6 +196,180 @@
     </div>
   </section>
 
+  <!-- Onboarding Modal -->
+  <div class="onboarding-modal" id="onboarding-modal" style="display: none;">
+    <div class="onboarding-modal-content">
+      <div class="onboarding-modal-header">
+        <h2>Get Your Own Storefront</h2>
+        <button class="btn-close" id="btn-close-onboarding">&times;</button>
+      </div>
+      
+      <div class="onboarding-steps">
+        <!-- Step 1: Generate Wallet -->
+        <div class="onboarding-step" id="onboarding-step-1">
+          <div class="step-header">
+            <span class="step-number">1</span>
+            <h3>Generate Your Wallet</h3>
+          </div>
+          <div class="step-content">
+            <p>We'll generate a new wallet for you right in your browser. Your private key never leaves your device.</p>
+            
+            <div class="wallet-generation-result" id="wallet-generation-result" style="display: none;">
+              <div class="wallet-info">
+                <label class="input-label">Your Wallet Address</label>
+                <div class="address-display">
+                  <input type="text" id="generated-address" readonly class="address-input">
+                  <button class="btn-copy" id="btn-copy-address" title="Copy address">📋</button>
+                </div>
+                
+                <label class="input-label" style="margin-top: 20px;">Your Private Key</label>
+                <div class="private-key-display">
+                  <input type="password" id="generated-private-key" readonly class="private-key-input">
+                  <button class="btn-copy" id="btn-copy-private-key" title="Copy private key">📋</button>
+                  <button class="btn-toggle-visibility" id="btn-toggle-key-visibility" title="Show/Hide">👁️</button>
+                </div>
+                
+                <div class="qr-code-container" id="qr-code-container" style="margin-top: 20px;">
+                  <label class="input-label">QR Code (for easy sharing)</label>
+                  <canvas id="qr-code-canvas"></canvas>
+                </div>
+                
+                <div class="security-warning" style="margin-top: 20px; padding: 15px; background: #fff3cd; border-radius: 8px; border-left: 4px solid #ffc107;">
+                  <strong>⚠️ Security Reminder:</strong>
+                  <ul style="margin: 10px 0 0 20px; text-align: left;">
+                    <li>Your private key was generated locally in your browser</li>
+                    <li>It never leaves your device</li>
+                    <li>Keep it safe - you'll need it to claim your storefront</li>
+                  </ul>
+                </div>
+                
+                <button class="btn btn-primary btn-large" id="btn-continue-step-2" style="margin-top: 20px;">
+                  Continue to Step 2
+                </button>
+              </div>
+            </div>
+            
+            <button class="btn btn-primary btn-large" id="btn-generate-wallet" style="margin-top: 20px;">
+              Generate Wallet
+            </button>
+          </div>
+        </div>
+
+        <!-- Step 2: Get $1 USDC -->
+        <div class="onboarding-step" id="onboarding-step-2" style="display: none;">
+          <div class="step-header">
+            <span class="step-number">2</span>
+            <h3>Get $1 USDC</h3>
+          </div>
+          <div class="step-content">
+            <p>You'll need $1 USDC to claim your storefront. Ask a friend who has USDC to send it to your wallet address.</p>
+            
+            <div class="funding-info">
+              <label class="input-label">Share This Address</label>
+              <div class="address-display">
+                <input type="text" id="funding-address" readonly class="address-input">
+                <button class="btn-copy" id="btn-copy-funding-address" title="Copy address">📋</button>
+              </div>
+              
+              <div class="qr-code-container" style="margin-top: 20px;">
+                <label class="input-label">QR Code</label>
+                <canvas id="funding-qr-code-canvas"></canvas>
+              </div>
+              
+              <div class="network-info" style="margin-top: 20px; padding: 15px; background: #e7f3ff; border-radius: 8px;">
+                <strong>Network:</strong> Base (eip155:84532)
+              </div>
+              
+              <div class="share-template" style="margin-top: 20px;">
+                <label class="input-label">Ready-to-send Message</label>
+                <textarea id="share-message" readonly class="share-message-input" rows="3">Hey! I need $1 USDC on Base network. Can you send it to [YOUR_ADDRESS]?</textarea>
+                <button class="btn btn-secondary" id="btn-copy-share-message" style="margin-top: 10px;">Copy Message</button>
+              </div>
+              
+              <button class="btn btn-primary btn-large" id="btn-continue-step-3" style="margin-top: 20px;">
+                I've received my $1 USDC - Continue
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 3: Claim Ownership -->
+        <div class="onboarding-step" id="onboarding-step-3" style="display: none;">
+          <div class="step-header">
+            <span class="step-number">3</span>
+            <h3>Claim Your Storefront</h3>
+          </div>
+          <div class="step-content">
+            <p>Pay $1 USDC to claim ownership of this storefront. This is a one-time payment - you'll own it forever.</p>
+            
+            <div class="claim-form">
+              <div class="claim-explanation">
+                <ul style="text-align: left; display: inline-block; margin: 20px 0;">
+                  <li>One-time payment - own it forever</li>
+                  <li>No recurring fees or subscriptions</li>
+                  <li>Unlock admin access to customize your page</li>
+                </ul>
+              </div>
+              
+              <div class="private-key-container" id="onboarding-private-key-container" style="display: none;">
+                <div class="private-key-warning">
+                  <div class="warning-icon">🔐</div>
+                  <p>
+                    Your private key will be used to sign the payment and immediately discarded. 
+                    Never stored or sent to the server.
+                  </p>
+                </div>
+                <label for="onboarding-private-key-input" class="input-label">
+                  <span>Private Key (pre-filled from Step 1)</span>
+                </label>
+                <input 
+                  type="password" 
+                  id="onboarding-private-key-input" 
+                  class="private-key-input"
+                  placeholder="0x..."
+                  autocomplete="off"
+                  spellcheck="false"
+                >
+                <div class="private-key-status" id="onboarding-private-key-status" style="display: none;">
+                  <span class="status-icon">✓</span>
+                  <span>Ready to sign</span>
+                </div>
+              </div>
+              
+              <button class="btn btn-primary btn-large" id="btn-claim-ownership-modal">
+                Claim Ownership for $1 USDC
+              </button>
+              
+              <p class="helper-text">One-time payment to activate your cash register. Forever ownership.</p>
+            </div>
+            
+            <!-- Claim Loading State -->
+            <div class="payment-loading" id="onboarding-claim-loading" style="display: none;">
+              <div class="loading-spinner"></div>
+              <p>Processing ownership claim...</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 4: Success -->
+        <div class="onboarding-step" id="onboarding-step-4" style="display: none;">
+          <div class="step-header">
+            <span class="step-number">✓</span>
+            <h3>Success! You're Now the Owner</h3>
+          </div>
+          <div class="step-content">
+            <div class="success-icon" style="font-size: 4rem; margin: 20px 0;">🎉</div>
+            <p>Congratulations! You've successfully claimed ownership of this storefront.</p>
+            <p style="margin-top: 20px;">The page will reload and you'll see the "Edit" button to customize your cash register.</p>
+            <button class="btn btn-primary btn-large" id="btn-close-onboarding-success" style="margin-top: 20px;">
+              Close & Continue
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Edit Modal -->
   <div class="edit-modal" id="edit-modal" style="display: none;">
     <div class="edit-modal-content">
@@ -245,6 +421,23 @@
           
           <label>Unit</label>
           <input type="text" id="edit-unit" class="edit-input" placeholder="hour, item, etc.">
+        </div>
+
+        <div class="edit-section" id="onboarding-helper-section" style="display: none;">
+          <h3>Help Others Get Started</h3>
+          <p style="margin-bottom: 15px;">Share this page - anyone can click "Get Your Own Storefront" to create their own cash register.</p>
+          
+          <label>Instructions Template</label>
+          <textarea id="onboarding-instructions" readonly class="edit-input" rows="5">To get your own storefront:
+1. Click "Get Your Own Storefront" on any cash register page
+2. Generate a wallet (happens in your browser)
+3. Share your wallet address with someone who has USDC
+4. Claim your storefront for $1 USDC (one-time fee)</textarea>
+          <button class="btn btn-secondary" id="btn-copy-instructions" style="margin-top: 10px;">Copy Instructions</button>
+          
+          <p style="margin-top: 20px; padding: 15px; background: #e7f3ff; border-radius: 8px;">
+            <strong>💡 Tip:</strong> The best way to help others is to send them $1 USDC when they share their wallet address with you.
+          </p>
         </div>
 
         <div class="edit-actions">

@@ -3711,6 +3711,11 @@ function serializeSignature({ r, s, to = "hex", v, yParity }) {
   return hexToBytes3(signature);
 }
 
+// node_modules/viem/_esm/accounts/generatePrivateKey.js
+function generatePrivateKey() {
+  return toHex2(secp256k1.utils.randomPrivateKey());
+}
+
 // node_modules/viem/_esm/errors/address.js
 var InvalidAddressError2 = class extends BaseError2 {
   constructor({ address }) {
@@ -5803,7 +5808,13 @@ function getAddressFromPrivateKey(privateKey) {
   const account = privateKeyToAccount(privateKey);
   return account.address;
 }
+function generateWallet() {
+  const privateKey = generatePrivateKey();
+  const account = privateKeyToAccount(privateKey);
+  return { address: account.address, privateKey };
+}
 export {
+  generateWallet,
   getAddressFromPrivateKey,
   signMessage2 as signMessage,
   signPayment

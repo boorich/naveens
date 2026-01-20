@@ -183,13 +183,27 @@ document.getElementById('quantity-input')?.addEventListener('input', (e) => {
 let signPaymentClientSide = null;
 let signMessageClientSide = null;
 let getAddressFromPrivateKey = null;
+let generateWalletClientSide = null;
 try {
   const signerModule = await import('./client-signer.bundle.js');
   signPaymentClientSide = signerModule.signPayment;
   signMessageClientSide = signerModule.signMessage;
   getAddressFromPrivateKey = signerModule.getAddressFromPrivateKey;
+  generateWalletClientSide = signerModule.generateWallet;
 } catch (error) {
   console.warn('Client-side signer not available:', error);
+}
+
+// Load QRCode library (from npm package, bundled or CDN)
+let QRCode = null;
+try {
+  // Try to use qrcode library if available via CDN or import
+  // For browser use, we'll use a simple approach with qrcode.js CDN
+  if (typeof window !== 'undefined' && window.QRCode) {
+    QRCode = window.QRCode;
+  }
+} catch (error) {
+  console.warn('QRCode library not available:', error);
 }
 
 // Claim Ownership handler (fixed $1 USDC)
@@ -641,6 +655,13 @@ async function showEditModal() {
     document.getElementById('edit-product-desc').value = product.description || '';
     document.getElementById('edit-base-price').value = product.basePrice || 0;
     document.getElementById('edit-unit').value = product.unit || '';
+    
+    // Show onboarding helper section if owner exists
+    const hasOwner = storeConfig.owner && 
+                     storeConfig.owner !== '0x0000000000000000000000000000000000000000';
+    if (hasOwner) {
+      document.getElementById('onboarding-helper-section').style.display = 'block';
+    }
   }
 }
 
@@ -765,6 +786,302 @@ document.getElementById('btn-save-config')?.addEventListener('click', async () =
     alert('Failed to save: ' + error.message);
   }
 });
+
+// ==================== ONBOARDING MODAL ====================
+
+// Modal state - store wallet in memory (not localStorage)
+let onboardingModalState = {
+  wallet: null, // { address, privateKey }
+  currentStep: 1
+};
+
+// Show onboarding modal
+function showOnboardingModal() {
+  const modal = document.getElementById('onboarding-modal');
+  if (modal) {
+    modal.style.display = 'flex';
+    resetOnboardingModal();
+  }
+}
+
+// Hide onboarding modal
+function hideOnboardingModal() {
+  const modal = document.getElementById('onboarding-modal');
+  if (modal) {
+    modal.style.display = 'none';
+    resetOnboardingModal();
+  }
+}
+
+// Reset modal to initial state
+function resetOnboardingModal() {
+  onboardingModalState = { wallet: null, currentStep: 1 };
+  showOnboardingStep(1);
+  document.getElementById('wallet-generation-result').style.display = 'none';
+  document.getElementById('btn-generate-wallet').style.display = 'block';
+  document.getElementById('onboarding-private-key-container').style.display = 'none';
+  document.getElementById('onboarding-claim-loading').style.display = 'none';
+}
+
+// Show specific step
+function showOnboardingStep(stepNumber) {
+  onboardingModalState.currentStep = stepNumber;
+  
+  // Hide all steps
+  for (let i = 1; i <= 4; i++) {
+    const step = document.getElementById(`onboarding-step-${i}`);
+    if (step) step.style.display = 'none';
+  }
+  
+  // Show requested step
+  const step = document.getElementById(`onboarding-step-${stepNumber}`);
+  if (step) step.style.display = 'block';
+}
+
+// Generate QR code using canvas
+async function generateQRCode(text, canvasId) {
+  try {
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) return;
+    
+    // Use QRCode from window (loaded from CDN in HTML head)
+    if (typeof window !== 'undefined' && window.QRCode && window.QRCode.toCanvas) {
+      await window.QRCode.toCanvas(canvas, text, { width: 200, margin: 2 });
+    } else {
+      // Fallback: Show text if QRCode library not available
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(0, 0, 200, 200);
+      ctx.fillStyle = '#000';
+      ctx.font = '10px monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText('QR Code', 100, 95);
+      ctx.fillText('Library loading...', 100, 110);
+      
+      // Wait a bit and try again
+      setTimeout(() => {
+        if (window.QRCode && window.QRCode.toCanvas) {
+          window.QRCode.toCanvas(canvas, text, { width: 200, margin: 2 }).catch(err => 
+            console.error('QR generation failed:', err)
+          );
+        }
+      }, 500);
+    }
+  } catch (error) {
+    console.error('Failed to generate QR code:', error);
+  }
+}
+
+// Copy to clipboard helper
+async function copyToClipboard(text, buttonElement) {
+  try {
+    await navigator.clipboard.writeText(text);
+    const originalText = buttonElement.textContent;
+    buttonElement.textContent = '✓ Copied!';
+    setTimeout(() => {
+      buttonElement.textContent = originalText;
+    }, 2000);
+  } catch (error) {
+    console.error('Failed to copy:', error);
+    alert('Failed to copy to clipboard. Please copy manually: ' + text);
+  }
+}
+
+// Handle wallet generation (Step 1)
+async function handleGenerateWallet() {
+  if (!generateWalletClientSide) {
+    alert('Wallet generation not available. Please ensure client-signer.bundle.js is loaded.');
+    return;
+  }
+  
+  try {
+    const wallet = generateWalletClientSide();
+    onboardingModalState.wallet = wallet;
+    
+    // Display wallet info
+    document.getElementById('generated-address').value = wallet.address;
+    document.getElementById('generated-private-key').value = wallet.privateKey;
+    document.getElementById('wallet-generation-result').style.display = 'block';
+    document.getElementById('btn-generate-wallet').style.display = 'none';
+    
+    // Generate QR code for address
+    await generateQRCode(wallet.address, 'qr-code-canvas');
+  } catch (error) {
+    console.error('Wallet generation error:', error);
+    alert('Failed to generate wallet: ' + error.message);
+  }
+}
+
+// Handle step 2 setup (Get $1 USDC)
+function setupStep2() {
+  if (!onboardingModalState.wallet) {
+    alert('Please generate a wallet first.');
+    return;
+  }
+  
+  const wallet = onboardingModalState.wallet;
+  document.getElementById('funding-address').value = wallet.address;
+  
+  // Generate QR code for funding address
+  generateQRCode(wallet.address, 'funding-qr-code-canvas');
+  
+  // Update share message template
+  const shareMessage = `Hey! I need $1 USDC on Base network. Can you send it to ${wallet.address}?`;
+  document.getElementById('share-message').value = shareMessage;
+}
+
+// Handle claim ownership from modal (Step 3)
+async function handleClaimOwnershipFromModal() {
+  if (!onboardingModalState.wallet) {
+    alert('No wallet found. Please start from Step 1.');
+    return;
+  }
+  
+  const privateKey = onboardingModalState.wallet.privateKey;
+  
+  // Reuse existing claim ownership logic
+  try {
+    document.getElementById('onboarding-claim-loading').style.display = 'block';
+    document.getElementById('btn-claim-ownership-modal').disabled = true;
+    
+    // Request payment challenge
+    const challengeResponse = await fetch('/api/pay', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        amount: 1.0,
+        currency: 'USD',
+        metadata: { type: 'ownership_claim' }
+      }),
+    });
+    
+    if (!challengeResponse.ok) {
+      throw new Error('Failed to get payment challenge');
+    }
+    
+    const challengeData = await challengeResponse.json();
+    
+    if (!challengeData.challenge) {
+      throw new Error('Invalid challenge response');
+    }
+    
+    // Sign payment client-side
+    if (!signPaymentClientSide) {
+      throw new Error('Client-side signing not available');
+    }
+    
+    const paymentPayload = await signPaymentClientSide(challengeData.challenge, privateKey);
+    
+    // Submit payment
+    const paymentResponse = await fetch('/api/pay', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ payload: paymentPayload }),
+    });
+    
+    const paymentData = await paymentResponse.json();
+    
+    if (paymentData.success || paymentData.ownerOptIn) {
+      // Success! Show step 4
+      showOnboardingStep(4);
+    } else {
+      throw new Error(paymentData.error || 'Payment failed');
+    }
+  } catch (error) {
+    console.error('Claim ownership error:', error);
+    alert('Failed to claim ownership: ' + error.message);
+  } finally {
+    document.getElementById('onboarding-claim-loading').style.display = 'none';
+    document.getElementById('btn-claim-ownership-modal').disabled = false;
+  }
+}
+
+// Event handlers for onboarding modal
+document.getElementById('btn-get-storefront')?.addEventListener('click', (e) => {
+  e.preventDefault();
+  showOnboardingModal();
+});
+
+document.getElementById('btn-close-onboarding')?.addEventListener('click', () => {
+  hideOnboardingModal();
+});
+
+document.getElementById('btn-close-onboarding-success')?.addEventListener('click', () => {
+  hideOnboardingModal();
+  // Reload page to show owner's storefront
+  window.location.reload();
+});
+
+document.getElementById('btn-generate-wallet')?.addEventListener('click', handleGenerateWallet);
+
+document.getElementById('btn-continue-step-2')?.addEventListener('click', () => {
+  setupStep2();
+  showOnboardingStep(2);
+});
+
+document.getElementById('btn-continue-step-3')?.addEventListener('click', () => {
+  // Pre-fill private key when entering step 3
+  if (onboardingModalState.wallet) {
+    const privateKeyInput = document.getElementById('onboarding-private-key-input');
+    if (privateKeyInput) {
+      privateKeyInput.value = onboardingModalState.wallet.privateKey;
+      document.getElementById('onboarding-private-key-container').style.display = 'block';
+    }
+  }
+  showOnboardingStep(3);
+});
+
+document.getElementById('btn-claim-ownership-modal')?.addEventListener('click', handleClaimOwnershipFromModal);
+
+// Copy buttons
+document.getElementById('btn-copy-address')?.addEventListener('click', () => {
+  const address = document.getElementById('generated-address').value;
+  copyToClipboard(address, document.getElementById('btn-copy-address'));
+});
+
+document.getElementById('btn-copy-private-key')?.addEventListener('click', () => {
+  const privateKey = document.getElementById('generated-private-key').value;
+  copyToClipboard(privateKey, document.getElementById('btn-copy-private-key'));
+});
+
+document.getElementById('btn-copy-funding-address')?.addEventListener('click', () => {
+  const address = document.getElementById('funding-address').value;
+  copyToClipboard(address, document.getElementById('btn-copy-funding-address'));
+});
+
+document.getElementById('btn-copy-share-message')?.addEventListener('click', () => {
+  const message = document.getElementById('share-message').value;
+  copyToClipboard(message, document.getElementById('btn-copy-share-message'));
+});
+
+// Toggle private key visibility
+document.getElementById('btn-toggle-key-visibility')?.addEventListener('click', () => {
+  const input = document.getElementById('generated-private-key');
+  const button = document.getElementById('btn-toggle-key-visibility');
+  if (input.type === 'password') {
+    input.type = 'text';
+    button.textContent = '🙈';
+  } else {
+    input.type = 'password';
+    button.textContent = '👁️';
+  }
+});
+
+// Onboarding helper in edit modal
+document.getElementById('btn-copy-instructions')?.addEventListener('click', () => {
+  const instructions = document.getElementById('onboarding-instructions').value;
+  copyToClipboard(instructions, document.getElementById('btn-copy-instructions'));
+});
+
+
+// Close modal when clicking outside
+document.getElementById('onboarding-modal')?.addEventListener('click', (e) => {
+  if (e.target.id === 'onboarding-modal') {
+    hideOnboardingModal();
+  }
+});
+
+// ==================== END ONBOARDING MODAL ====================
 
 // Initialize
 await loadStoreConfig();
