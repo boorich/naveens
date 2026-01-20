@@ -833,9 +833,17 @@ function showOnboardingStep(stepNumber) {
     if (step) step.style.display = 'none';
   }
   
+  // Hide delegate prep step
+  const delegateStep = document.getElementById('onboarding-delegate-prep');
+  if (delegateStep) delegateStep.style.display = 'none';
+  
   // Show requested step
-  const step = document.getElementById(`onboarding-step-${stepNumber}`);
-  if (step) step.style.display = 'block';
+  if (stepNumber === 'delegate-prep') {
+    if (delegateStep) delegateStep.style.display = 'block';
+  } else {
+    const step = document.getElementById(`onboarding-step-${stepNumber}`);
+    if (step) step.style.display = 'block';
+  }
 }
 
 // Generate QR code using canvas
@@ -955,6 +963,122 @@ document.getElementById('btn-share-sms-step2')?.addEventListener('click', () => 
   window.location.href = smsUrl;
 });
 
+// Delegate prep handlers
+document.getElementById('btn-show-friend-prep')?.addEventListener('click', () => {
+  if (!onboardingModalState.wallet) {
+    alert('Please generate a wallet first.');
+    return;
+  }
+  const prepDiv = document.getElementById('friend-prep-instructions');
+  const addressInput = document.getElementById('friend-prep-address');
+  if (prepDiv && addressInput) {
+    addressInput.value = onboardingModalState.wallet.address;
+    prepDiv.style.display = 'block';
+  }
+});
+
+document.getElementById('btn-copy-friend-prep-address')?.addEventListener('click', () => {
+  const address = document.getElementById('friend-prep-address').value;
+  copyToClipboard(address, document.getElementById('btn-copy-friend-prep-address'));
+});
+
+// Handle delegate prep payment
+document.getElementById('btn-delegate-prep-pay')?.addEventListener('click', async () => {
+  const ownerAddress = document.getElementById('delegate-owner-address').value.trim();
+  if (!ownerAddress || !ownerAddress.startsWith('0x') || ownerAddress.length !== 42) {
+    alert('Please enter a valid Ethereum address (0x followed by 40 hex characters).');
+    return;
+  }
+  
+  const delegatePrepForm = document.querySelector('.delegate-prep-form');
+  const delegatePrepResult = document.getElementById('delegate-prep-result');
+  const payButton = document.getElementById('btn-delegate-prep-pay');
+  
+  try {
+    payButton.disabled = true;
+    payButton.textContent = 'Requesting payment challenge...';
+    
+    // Request payment challenge
+    const challengeResponse = await fetch('/api/pay', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        amount: 1.0,
+        label: 'delegate_prep',
+        metadata: { intendedOwner: ownerAddress }
+      }),
+    });
+    
+    if (!challengeResponse.ok) {
+      throw new Error('Failed to get payment challenge');
+    }
+    
+    const challengeData = await challengeResponse.json();
+    
+    if (!challengeData.challenge) {
+      throw new Error('Invalid challenge response');
+    }
+    
+    // Prompt for private key
+    const privateKey = prompt('Enter your private key to sign the payment:\n\nThis will pay $1 USDC to create a storefront for your friend. Your private key will be used to sign and immediately cleared.');
+    
+    if (!privateKey || !privateKey.trim()) {
+      payButton.disabled = false;
+      payButton.textContent = 'Pay $1 USDC to Create Storefront';
+      return;
+    }
+    
+    payButton.textContent = 'Signing payment...';
+    
+    // Sign payment
+    if (!signPaymentClientSide) {
+      throw new Error('Client-side signing not available');
+    }
+    
+    const paymentPayload = await signPaymentClientSide(challengeData.challenge, privateKey.trim());
+    
+    payButton.textContent = 'Processing payment...';
+    
+    // Submit payment with metadata
+    const paymentResponse = await fetch('/api/pay', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'PAYMENT-SIGNATURE': btoa(JSON.stringify(paymentPayload)),
+      },
+      body: JSON.stringify({
+        amount: 1.0,
+        label: 'delegate_prep',
+        metadata: { intendedOwner: ownerAddress }
+      }),
+    });
+    
+    const paymentData = await paymentResponse.json();
+    
+    if (paymentData.success) {
+      // Show success with storefront URL
+      const storefrontUrl = window.location.origin;
+      document.getElementById('delegate-storefront-url').value = storefrontUrl;
+      delegatePrepForm.style.display = 'none';
+      delegatePrepResult.style.display = 'block';
+      payButton.textContent = 'Pay $1 USDC to Create Storefront';
+      payButton.disabled = false;
+    } else {
+      throw new Error(paymentData.error || 'Payment failed');
+    }
+  } catch (error) {
+    console.error('Delegate prep error:', error);
+    alert('Failed to prep storefront: ' + error.message);
+    payButton.textContent = 'Pay $1 USDC to Create Storefront';
+    payButton.disabled = false;
+  }
+});
+
+document.getElementById('btn-copy-storefront-url')?.addEventListener('click', () => {
+  const url = document.getElementById('delegate-storefront-url').value;
+  copyToClipboard(url, document.getElementById('btn-copy-storefront-url'));
+});
+
 // Handle claim ownership from modal (Step 3)
 async function handleClaimOwnershipFromModal() {
   if (!onboardingModalState.wallet) {
@@ -1025,6 +1149,14 @@ async function handleClaimOwnershipFromModal() {
 document.getElementById('btn-get-storefront')?.addEventListener('click', (e) => {
   e.preventDefault();
   showOnboardingModal();
+});
+
+document.getElementById('btn-prepay-for-friend')?.addEventListener('click', (e) => {
+  e.preventDefault();
+  showOnboardingModal();
+  // Show delegate prep step directly
+  resetOnboardingModal();
+  showOnboardingStep('delegate-prep');
 });
 
 document.getElementById('btn-close-onboarding')?.addEventListener('click', () => {

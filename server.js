@@ -249,13 +249,14 @@ app.post('/api/pay', async (req, res) => {
       await ensureCoinbaseProvider();
     }
     
-    const { amount, label } = req.body;
+    const { amount, label, metadata } = req.body;
     
     if (typeof amount !== 'number' || amount <= 0) {
       return res.status(400).json({ error: 'Invalid amount' });
     }
 
     const labelValue = label || 'ride_payment';
+    const intendedOwner = metadata?.intendedOwner; // For delegate prep: Friend sets owner for New Person
 
     // Check if payment is already provided (PAYMENT-SIGNATURE header)
     // This header is protocol-specific, but we need to check for it to support external clients
@@ -336,32 +337,44 @@ app.post('/api/pay', async (req, res) => {
       });
 
       if (settlementResult.status === 'settled') {
-        // First payment opt-in: If no owner is set, the first payer becomes the owner
+        // First payment opt-in: If no owner is set, set owner
         // Do this FIRST even if transaction is missing - payment was settled!
         const config = loadStoreConfig();
         const hasNoOwner = !config.owner || 
                           config.owner === '0x0000000000000000000000000000000000000000';
         
-        if (hasNoOwner && settlementResult.proof?.payer) {
-          // First payment - set payer as owner (opt-in)
-          const ownerAddress = settlementResult.proof.payer;
-          console.log(`🎉 First payment opt-in: ${ownerAddress} is now the owner`);
-          const updatedConfig = {
-            ...config,
-            owner: ownerAddress,
-          };
-          const saved = saveStoreConfig(updatedConfig);
-          if (saved) {
-            console.log('✅ Owner set in config.json from first payment:', ownerAddress);
-            // Verify it was saved
-            const verifyConfig = loadStoreConfig();
-            if (verifyConfig?.owner === ownerAddress) {
-              console.log('✅ Verified: Owner saved correctly');
+        if (hasNoOwner) {
+          let ownerAddress = null;
+          
+          // Check if this is a delegate prep (Friend setting owner for New Person)
+          if (intendedOwner && typeof intendedOwner === 'string' && intendedOwner.startsWith('0x')) {
+            // Delegate prep: Friend pays, but owner is set to New Person's address
+            ownerAddress = intendedOwner.toLowerCase();
+            console.log(`🎁 Delegate prep: Friend paid $1, setting owner to New Person: ${ownerAddress}`);
+          } else if (settlementResult.proof?.payer) {
+            // Self-claim: Payer becomes owner (current flow)
+            ownerAddress = settlementResult.proof.payer.toLowerCase();
+            console.log(`🎉 First payment opt-in: ${ownerAddress} is now the owner (self-claim)`);
+          }
+          
+          if (ownerAddress) {
+            const updatedConfig = {
+              ...config,
+              owner: ownerAddress,
+            };
+            const saved = saveStoreConfig(updatedConfig);
+            if (saved) {
+              console.log('✅ Owner set in config.json:', ownerAddress, intendedOwner ? '(delegate prep)' : '(self-claim)');
+              // Verify it was saved
+              const verifyConfig = loadStoreConfig();
+              if (verifyConfig?.owner === ownerAddress) {
+                console.log('✅ Verified: Owner saved correctly');
+              } else {
+                console.error('❌ WARNING: Owner save verification failed! Expected:', ownerAddress, 'Got:', verifyConfig?.owner);
+              }
             } else {
-              console.error('❌ WARNING: Owner save verification failed! Expected:', ownerAddress, 'Got:', verifyConfig?.owner);
+              console.error('❌ Failed to save owner to config.json!');
             }
-          } else {
-            console.error('❌ Failed to save owner to config.json!');
           }
         }
         
@@ -375,7 +388,8 @@ app.post('/api/pay', async (req, res) => {
             transaction: null, // Missing transaction hash
             network: settlementResult.proof?.network || 'eip155:84532',
             amount: amount,
-            ownerOptIn: hasNoOwner && settlementResult.proof?.payer ? true : undefined,
+            ownerOptIn: hasNoOwner ? true : undefined,
+            delegatePrep: intendedOwner ? true : undefined,
             warning: 'Payment settled but transaction hash not available - check blockchain explorer or try again',
           });
         }
@@ -385,12 +399,18 @@ app.post('/api/pay', async (req, res) => {
         const settlementBase64 = Buffer.from(settlementJson).toString('base64');
         res.status(200);
         res.set('PAYMENT-RESPONSE', settlementBase64);
+        
+        const config = loadStoreConfig();
+        const wasNoOwner = !config.owner || config.owner === '0x0000000000000000000000000000000000000000';
+        
         return res.json({
           success: true,
           transaction: settlementResult.proof.transaction,
           network: settlementResult.proof.network || 'eip155:84532',
           amount: amount,
-          ownerOptIn: hasNoOwner && settlementResult.proof.payer ? true : undefined,
+          ownerOptIn: wasNoOwner ? true : undefined,
+          delegatePrep: intendedOwner ? true : undefined,
+          owner: config.owner, // Return the owner address (for delegate prep, this is intendedOwner)
         });
       }
 
