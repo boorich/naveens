@@ -50,7 +50,7 @@ What is x402?
 x402 uses the ledger we just discussed to:
 - Record the price (can't be changed)
 - Record the payment (can't be faked)
-- Release the service (automatic)
+- Release the service (if the service can be automated, think a booking)
 
 **It's payment infrastructure, not speculation.**
 

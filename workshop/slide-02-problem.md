@@ -1,6 +1,6 @@
-The Problem We're Solving
+Digital payment rails that work in your long-term economic favor are an underserved piece of technology.
 
-## When prices are hidden:
+## Right now "free market prices" are largely hidden:
 
 - Tourists or nomads get overcharged (this backlashes)
 - Locals get bargained down (that's the backlash)
@@ -19,7 +19,7 @@ The Problem We're Solving
 
 ### The solution:
 
-**Show the price upfront. No surprises. No games.**
+**Show the price upfront. Make it a digitally payable endpoint. Eliminate all economic surprises and games.**
 
 This isn't about technology for technology's sake. It is about **fairness and trust** in everyday transactions.
 
