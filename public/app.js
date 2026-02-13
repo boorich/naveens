@@ -7,10 +7,15 @@ let config = {
   baseUrl: window.location.origin,
   driverWallet: null, // Will be loaded from server
   network: 'eip155:84532', // Will be loaded from server
-  // TukTuk pricing: base fare + (distance * rate per km)
+  apiBase: '/api', // Multi-tenant: set from path /p/:slug -> /api/p/:slug
   tukTukBaseFare: 100, // LKR
   tukTukRatePerKm: 80, // LKR per km
 };
+
+function getApiBaseFromPath() {
+  const match = window.location.pathname.match(/^\/p\/([a-z0-9_-]+)\/?$/i);
+  return match ? `/api/p/${match[1]}` : '/api';
+}
 
 // Track if amount was set manually (to avoid slider overriding manual input)
 let amountSetManually = false;
@@ -152,9 +157,10 @@ let currentLang = localStorage.getItem('language') || 'en';
 
 // Initialize App
 document.addEventListener('DOMContentLoaded', async () => {
+  config.apiBase = getApiBaseFromPath();
   // Load config from server (with offline fallback)
   try {
-    const response = await fetch('/api/config');
+    const response = await fetch(`${config.apiBase}/config`);
     if (response.ok) {
       const serverConfig = await response.json();
       config = { ...config, ...serverConfig };
@@ -451,7 +457,7 @@ async function handlePayment() {
   
   try {
     // Request payment - get challenge or settlement
-    const response = await fetch('/api/pay', {
+    const response = await fetch(`${config.apiBase}/pay`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -527,7 +533,7 @@ async function handlePayment() {
         }, 500);
         
         // Send signed payment to server (only signed payload, no private key)
-        const paymentResponse = await fetch('/api/pay', {
+        const paymentResponse = await fetch(`${config.apiBase}/pay`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -565,7 +571,7 @@ async function handlePayment() {
         // Fall back to server-side test payment (if available)
         // This should rarely happen if bundle is built
         try {
-          const testResponse = await fetch('/api/test-pay', {
+          const testResponse = await fetch(`${config.apiBase}/test-pay`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ amount: usdcAmount, label: 'ride_payment' }),
@@ -587,7 +593,7 @@ async function handlePayment() {
       
       // Use server-side test payment endpoint (requires TEST_PRIVATE_KEY on server)
       try {
-        const testResponse = await fetch('/api/test-pay', {
+        const testResponse = await fetch(`${config.apiBase}/test-pay`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

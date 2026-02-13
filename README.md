@@ -187,6 +187,17 @@ npm run start:coinbase
 
 The server will start on `http://localhost:4021` (or the PORT specified in `.env`).
 
+## Two ways to run
+
+| Mode | Use case | Setup |
+|------|----------|--------|
+| **Self-hosted (single-tenant)** | One driver/business, you run the server yourself | No database. Set `DRIVER_USDC_WALLET`, `LKR_PER_USDC`, etc. in `.env`. Root URL and `/api/*` use that config. |
+| **Community service (multi-tenant)** | One shared deployment; many businesses each get a page and their own wallet | Set `DATABASE_PATH` (and optionally `MULTI_TENANT=1`). Register businesses via `POST /api/businesses`. Each business has a slug and a page at `/p/:slug` (e.g. `/p/naveen`). |
+
+**Self-hosted** is the default: no DB, no extra deps beyond the existing app. **Power users** can host their own instance from this repo and keep full control.
+
+**Community service** adds optional SQLite and path-based “endpoints”: each slug is a separate recipient (wallet + name + LKR rate). See [COMMUNITY-SERVICE.md](COMMUNITY-SERVICE.md) for setup and API.
+
 ## Configuration
 
 All configuration is done via environment variables in `.env`. See `.env.example` for all available options.
@@ -236,8 +247,10 @@ This will output:
 /public/
   index.html                  # Main page
   styles.css                  # Styles
-  app.js                      # Client-side JavaScript (2-state model: challenge vs settled)
+  app.js                      # Client-side JavaScript (slug-aware: /api or /api/p/:slug)
 /lib/
+  db.js                       # Optional SQLite for multi-tenant (when DATABASE_PATH set)
+  businesses.js                # Business (tenant) records by slug
   payment/                    # Payment abstraction layer
     provider.js               # PaymentProvider interface & registry
     service.js                # High-level payment service (hides protocol details)
