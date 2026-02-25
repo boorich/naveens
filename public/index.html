@@ -3,205 +3,115 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title data-i18n="page-title">Naveen's TukTuk - Settle Your Ride</title>
+  <title>Get Your Payment Page — Powered by x402</title>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <!-- Language Toggle -->
-  <div class="language-toggle">
-    <button class="lang-btn active" data-lang="en">EN</button>
-    <button class="lang-btn" data-lang="si">SI</button>
-    <button class="lang-btn" data-lang="ta">TA</button>
+  <div class="join-hero">
+    <h1>Get your payment page</h1>
+    <p>Sell anything. Get paid in USDC. No bank required.</p>
   </div>
 
-  <!-- Hero Section -->
-  <header class="hero">
-    <div class="hero-background"></div>
-    <div class="hero-content">
-      <img src="naveen.png" alt="Naveen" class="driver-photo" id="driver-photo" onerror="this.style.display='none'">
-      <div class="driver-text">
-        <h1 class="driver-name">
-          <span class="driver-name-first" data-i18n="driver-name-first">Naveen's</span>
-          <span class="driver-name-service" data-i18n="driver-name-service">TukTuk Service</span>
-        </h1>
-        <p class="driver-location" data-i18n="driver-location">Batticaloa, Sri Lanka</p>
-      </div>
-      <div class="availability-badge" id="availability-badge">
-        <span class="availability-dot"></span>
-        <span class="availability-text" data-i18n="available-now">Available now</span>
-      </div>
-    </div>
-    </div>
-    <div class="hero-bottom-band"></div>
-  </header>
+  <div class="join-wrap">
+    <!-- Error banner -->
+    <div class="error-banner" id="error-banner"></div>
 
-  <!-- Primary Action Buttons -->
-  <div class="action-buttons">
-    <button class="btn btn-green btn-whatsapp" id="btn-whatsapp">
-      <span class="btn-icon">💬</span>
-      <span data-i18n="whatsapp-me">WhatsApp Me</span>
-    </button>
-    <div class="btn-call-wrapper">
-      <button class="btn btn-white btn-call" id="btn-call">
-        <span class="btn-icon">📞</span>
-        <span data-i18n="call-me">Call Me</span>
-        <span class="dropdown-arrow">▼</span>
-      </button>
-    </div>
-  </div>
+    <!-- Registration form -->
+    <div id="form-section">
+      <div class="join-card">
+        <h2>About you</h2>
 
-  <!-- Payment Section -->
-  <section class="payment-section" id="payment-section">
-    <h2 class="section-title" data-i18n="settle-title">Settle Ride: Pay Agreed Amount</h2>
-    
-    <div class="payment-form">
-      <!-- Distance Slider -->
-      <div class="distance-slider-container">
-        <label for="distance-slider" class="input-label" data-i18n="distance-label">Distance: <span id="distance-value">5</span> km</label>
-        <div class="slider-wrapper">
-          <div class="slider-ruler">
-            <span class="ruler-tick" data-value="1"><span>1</span></span>
-            <span class="ruler-tick" data-value="5"><span>5</span></span>
-            <span class="ruler-tick" data-value="10"><span>10</span></span>
-            <span class="ruler-tick" data-value="15"><span>15</span></span>
-            <span class="ruler-tick" data-value="20"><span>20</span></span>
-            <span class="ruler-tick" data-value="25"><span>25</span></span>
-            <span class="ruler-tick" data-value="30"><span>30</span></span>
-            <span class="ruler-tick" data-value="35"><span>35</span></span>
-            <span class="ruler-tick" data-value="40"><span>40</span></span>
-            <span class="ruler-tick" data-value="45"><span>45</span></span>
-            <span class="ruler-tick" data-value="50"><span>50</span></span>
+        <div class="field-group">
+          <label for="name">Your name</label>
+          <input type="text" id="name" placeholder="e.g. Naveen" autocomplete="given-name">
+        </div>
+
+        <div class="field-group">
+          <label for="service-name">What you sell</label>
+          <input type="text" id="service-name" placeholder="e.g. TukTuk Service, Food Stall, Grocery">
+          <div class="field-note">Short label — shown on your payment page</div>
+        </div>
+
+        <div class="field-group">
+          <label for="description">Tagline</label>
+          <input type="text" id="description" placeholder="e.g. Settle your ride in USDC">
+          <div class="field-note">One line describing what customers pay for</div>
+        </div>
+
+        <div class="field-group">
+          <label for="city">City</label>
+          <input type="text" id="city" placeholder="e.g. Batticaloa">
+        </div>
+
+        <div class="field-group">
+          <label for="whatsapp">WhatsApp number</label>
+          <input type="tel" id="whatsapp" placeholder="+94XXXXXXXXX" autocomplete="tel">
+        </div>
+
+        <div class="field-group">
+          <label for="phone">Phone number (optional)</label>
+          <input type="tel" id="phone" placeholder="+94XXXXXXXXX" autocomplete="tel">
+        </div>
+      </div>
+
+      <div class="join-card">
+        <h2>Your USDC wallet</h2>
+        <p class="field-note">Payments go directly to this wallet. You need a wallet on the Base network to receive USDC.</p>
+
+        <div class="field-group">
+          <label for="wallet">Wallet address</label>
+          <div class="wallet-row">
+            <input type="text" id="wallet" placeholder="0x..." spellcheck="false" autocomplete="off">
+            <button class="btn-gen" id="btn-gen-wallet" type="button">Generate one</button>
           </div>
-          <input 
-            type="range" 
-            id="distance-slider" 
-            class="distance-slider" 
-            min="1" 
-            max="50" 
-            value="5" 
-            step="0.5"
-          >
+          <div class="field-note" id="wallet-note">Paste an existing Base wallet address, or generate a new one.</div>
+        </div>
+
+        <!-- Generated key display -->
+        <div class="generated-key-box" id="generated-key-box">
+          <div class="warning-label">⚠️ Save your private key — shown only once</div>
+          <div class="key-value" id="generated-private-key"></div>
+          <button class="btn-copy-key" id="btn-copy-key" type="button">Copy key</button>
+          <div class="field-note" style="margin-top:8px;color:#78350f;">This key signs your payments. Store it somewhere safe (e.g. notes app, written down). It is never sent to our server.</div>
         </div>
       </div>
 
-      <div class="divider-text" data-i18n="or-manual">Or enter amount manually:</div>
-      
-      <label for="amount-input" class="input-label" data-i18n="enter-amount">Enter Amount in LKR</label>
-      <input 
-        type="number" 
-        id="amount-input" 
-        class="amount-input" 
-        value="500" 
-        min="0" 
-        step="1"
-        placeholder="500"
-      >
-      
-      <div class="preset-buttons">
-        <button class="preset-btn active" data-amount="500">Rs. 500</button>
-        <button class="preset-btn" data-amount="1000">Rs. 1000</button>
-        <button class="preset-btn" data-amount="2000">Rs. 2000</button>
-        <button class="preset-btn" data-amount="custom" data-i18n="more">More...</button>
-      </div>
+      <div class="join-card">
+        <h2>Your page URL</h2>
 
-      <div class="usdc-conversion">
-        <span data-i18n="estimated">Estimated:</span> <span id="usdc-amount">1.67</span> USDC
-      </div>
-
-      <!-- Private Key Input (shown when payment challenge received) -->
-      <div class="private-key-container" id="private-key-container" style="display: none;">
-        <div class="private-key-warning">
-          <div class="warning-icon">🔐</div>
-          <p data-i18n="private-key-warning">
-            Your private key will be used to sign the payment and immediately discarded. 
-            Never stored or sent to the server.
-          </p>
+        <div class="field-group">
+          <label for="slug">Your identifier</label>
+          <input type="text" id="slug" placeholder="e.g. naveen" autocomplete="off" spellcheck="false">
+          <div class="slug-preview" id="slug-preview"></div>
+          <div class="field-note" id="slug-note">Letters, numbers, hyphens only. Auto-filled from your name.</div>
         </div>
-        <label for="private-key-input" class="input-label">
-          <span data-i18n="private-key-label">Paste Private Key</span>
-        </label>
-        <input 
-          type="password" 
-          id="private-key-input" 
-          class="private-key-input"
-          placeholder="0x..."
-          autocomplete="off"
-          spellcheck="false"
-          data-i18n-placeholder="private-key-placeholder"
-        >
-        <div class="private-key-status" id="private-key-status" style="display: none;">
-          <span class="status-icon">✓</span>
-          <span data-i18n="private-key-ready">Ready to sign</span>
+
+        <div class="field-group">
+          <label for="lkr-rate">LKR per USDC exchange rate</label>
+          <input type="number" id="lkr-rate" value="300" min="1" step="1">
+          <div class="field-note">Used to show estimated amounts. Default: 300</div>
         </div>
-        <p class="helper-text-small" data-i18n="private-key-helper">
-          Paste your private key. It will be used to sign this payment and immediately cleared from memory. 
-          The key never leaves your browser.
-        </p>
       </div>
 
-      <button class="btn btn-green btn-large" id="btn-settle-usdc">
-        <span data-i18n="settle-usdc">Settle in USDC</span>
-      </button>
-
-      <p class="helper-text" data-i18n="helper-text">Settle in USDC. Naveen receives it directly.</p>
+      <div class="error-banner" id="error-banner-bottom"></div>
+      <button class="btn-submit" id="btn-submit" type="button">Create my payment page</button>
     </div>
 
-    <!-- Payment Success State -->
-    <div class="payment-success" id="payment-success" style="display: none;">
-      <div class="success-icon">✓</div>
-      <h3 data-i18n="payment-success-title">Payment Successful!</h3>
-      <p data-i18n="settlement-visible">Settlement visible to driver</p>
-      <div class="transaction-details">
-        <p><strong data-i18n="amount-paid">Amount:</strong> <span id="success-amount"></span> USDC</p>
-        <p><strong data-i18n="transaction-hash">Transaction:</strong> <a id="success-tx-link" class="tx-hash" href="#" target="_blank" rel="noopener noreferrer"><span id="success-tx"></span> ↗</a></p>
-        <p id="verification-status" class="verification-status" style="display: none;"></p>
+    <!-- Success state -->
+    <div class="success-card" id="success-card">
+      <div class="check">✅</div>
+      <h2>Your page is live!</h2>
+      <p>Share this link — anyone can pay you directly in USDC.</p>
+      <div class="page-url-box" id="success-url"></div>
+      <div class="success-actions">
+        <button class="btn-action btn-visit" id="btn-visit">Open my page</button>
+        <button class="btn-action btn-copy" id="btn-copy-url">Copy link</button>
+        <button class="btn-action btn-share" id="btn-share-wa">Share on WhatsApp</button>
       </div>
-      <p class="helper-text-small" data-i18n="verification-note" style="margin-top: 10px;">
-        Transaction verified independently on-chain. Click the transaction hash above to view on BaseScan.
-      </p>
     </div>
 
-    <!-- Payment Loading State -->
-    <div class="payment-loading" id="payment-loading" style="display: none;">
-      <div class="loading-spinner"></div>
-      <p data-i18n="processing-payment">Processing payment...</p>
-    </div>
-
-    <!-- Payment Error State -->
-    <div class="payment-error" id="payment-error" style="display: none;">
-      <p class="error-message" id="error-message"></p>
-    </div>
-  </section>
-
-  <!-- Recommend Naveen Section -->
-  <section class="share-section">
-    <h2 class="section-title" data-i18n="recommend-title">Recommend Naveen</h2>
-    <p class="share-description" data-i18n="recommend-description">If you liked your ride, sharing this page helps more than star ratings.</p>
-    
-    <div class="share-buttons">
-      <button class="share-btn share-whatsapp" id="share-whatsapp" title="Share on WhatsApp">
-        <span>💬</span>
-      </button>
-      <button class="share-btn share-facebook" id="share-facebook" title="Share on Facebook">
-        <span>f</span>
-      </button>
-      <button class="share-btn share-twitter" id="share-twitter" title="Share on Twitter/X">
-        <span>𝕏</span>
-      </button>
-      <button class="share-btn share-copy" id="share-copy" title="Copy link">
-        <span>📋</span>
-      </button>
-    </div>
-  </section>
-
-
-  <!-- Footer -->
-  <footer class="footer">
-    <p>
-      <span class="x402-brand">Powered by x402</span>
-      <span data-i18n="safety-note">Agree fare before you ride</span>
-    </p>
-  </footer>
+    <p class="footer-note">Powered by x402 · Payments settle on Base · No bank needed</p>
+  </div>
 
   <script type="module" src="app.js"></script>
 </body>

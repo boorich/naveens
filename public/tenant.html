@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title id="page-title">Pay — Powered by x402</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <!-- Language Toggle -->
+  <div class="language-toggle">
+    <button class="lang-btn active" data-lang="en">EN</button>
+    <button class="lang-btn" data-lang="si">SI</button>
+    <button class="lang-btn" data-lang="ta">TA</button>
+  </div>
+
+  <!-- Hero -->
+  <header class="hero">
+    <div class="hero-background"></div>
+    <div class="hero-content">
+      <div class="driver-text">
+        <h1 class="driver-name">
+          <span class="driver-name-first" id="hero-seller-name">—</span>
+          <span class="driver-name-service" id="hero-service-name"></span>
+        </h1>
+        <p class="driver-location" id="hero-city"></p>
+      </div>
+      <div class="availability-badge" id="availability-badge">
+        <span class="availability-dot"></span>
+        <span class="availability-text">Available now</span>
+      </div>
+    </div>
+    <div class="hero-bottom-band"></div>
+  </header>
+
+  <p class="service-description" id="service-description"></p>
+
+  <!-- Contact buttons -->
+  <div class="action-buttons" id="contact-buttons" style="display:none;">
+    <button class="btn btn-green btn-whatsapp" id="btn-whatsapp" style="display:none;">
+      <span class="btn-icon">💬</span>
+      <span>WhatsApp</span>
+    </button>
+    <button class="btn btn-white btn-call" id="btn-call" style="display:none;">
+      <span class="btn-icon">📞</span>
+      <span>Call</span>
+    </button>
+  </div>
+
+  <!-- Payment Section -->
+  <section class="payment-section" id="payment-section">
+    <h2 class="section-title" id="pay-title">Pay</h2>
+
+    <div class="payment-form">
+      <label for="amount-input" class="input-label">Amount in LKR</label>
+      <input
+        type="number"
+        id="amount-input"
+        class="amount-input"
+        value="500"
+        min="1"
+        step="1"
+        placeholder="500"
+      >
+
+      <div class="preset-buttons">
+        <button class="preset-btn active" data-amount="500">Rs. 500</button>
+        <button class="preset-btn" data-amount="1000">Rs. 1000</button>
+        <button class="preset-btn" data-amount="2000">Rs. 2000</button>
+        <button class="preset-btn" data-amount="custom">More…</button>
+      </div>
+
+      <div class="usdc-conversion">
+        ≈ <span id="usdc-amount">1.67</span> USDC
+      </div>
+
+      <!-- Private key input (shown on payment challenge) -->
+      <div class="private-key-container" id="private-key-container" style="display: none;">
+        <div class="private-key-warning">
+          <div class="warning-icon">🔐</div>
+          <p>Your private key signs this payment and is immediately cleared from memory. It is never sent to the server.</p>
+        </div>
+        <label for="private-key-input" class="input-label">Paste Private Key</label>
+        <input
+          type="password"
+          id="private-key-input"
+          class="private-key-input"
+          placeholder="0x…"
+          autocomplete="off"
+          spellcheck="false"
+        >
+        <div class="private-key-status" id="private-key-status" style="display: none;">
+          <span class="status-icon">✓</span>
+          <span>Ready to sign</span>
+        </div>
+      </div>
+
+      <button class="btn btn-green btn-large" id="btn-pay">
+        Pay in USDC
+      </button>
+
+      <p class="helper-text" id="helper-text">Funds go directly to the seller's wallet.</p>
+    </div>
+
+    <!-- States -->
+    <div class="payment-success" id="payment-success" style="display: none;">
+      <div class="success-icon">✓</div>
+      <h3>Payment Successful!</h3>
+      <div class="transaction-details">
+        <p><strong>Amount:</strong> <span id="success-amount"></span> USDC</p>
+        <p><strong>Transaction:</strong>
+          <a id="success-tx-link" class="tx-hash" href="#" target="_blank" rel="noopener noreferrer">
+            <span id="success-tx"></span> ↗
+          </a>
+        </p>
+        <p id="verification-status" class="verification-status" style="display: none;"></p>
+      </div>
+    </div>
+
+    <div class="payment-loading" id="payment-loading" style="display: none;">
+      <div class="loading-spinner"></div>
+      <p>Processing payment…</p>
+    </div>
+
+    <div class="payment-error" id="payment-error" style="display: none;">
+      <p class="error-message" id="error-message"></p>
+    </div>
+  </section>
+
+  <!-- Share section -->
+  <section class="share-section">
+    <h2 class="section-title" id="share-title">Recommend this seller</h2>
+    <p class="share-description" id="share-description">Share this page to help them grow.</p>
+    <div class="share-buttons">
+      <button class="share-btn share-whatsapp" id="share-whatsapp" title="Share on WhatsApp"><span>💬</span></button>
+      <button class="share-btn share-facebook" id="share-facebook" title="Share on Facebook"><span>f</span></button>
+      <button class="share-btn share-twitter"  id="share-twitter"  title="Share on X"><span>𝕏</span></button>
+      <button class="share-btn share-copy"     id="share-copy"     title="Copy link"><span>📋</span></button>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <p>
+      <span class="x402-brand">Powered by x402</span>
+    </p>
+  </footer>
+
+  <script type="module" src="/tenant.js"></script>
+</body>
+</html>
