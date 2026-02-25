@@ -16,4 +16,4 @@
 
 ---
 
-### So what problem are we actually solving?
+### So what problem are we actually looking into today?

@@ -1,6 +1,8 @@
-Digital payment rails that work in your long-term economic favor are an underserved piece of technology.
+Digital payment rails that work in your long-term economic favor are hard to establish. Their evil twin, big Saas platforms, protect their market aggressively.
 
-## Right now "free market prices" are largely hidden:
+## If you don't want to pay those companies, there is always cash as a fallback, but "free market prices" are largely hidden.
+
+This leads to:
 
 - Tourists or nomads get overcharged (this backlashes)
 - Locals get bargained down (that's the backlash)
@@ -19,7 +21,7 @@ Digital payment rails that work in your long-term economic favor are an underser
 
 ### The solution:
 
-**Show the price upfront. Make it a digitally payable endpoint. Eliminate all economic surprises and games.**
+**Show the price upfront and make it a digitally payable endpoint. Eliminate all economic surprises and games.**
 
 This isn't about technology for technology's sake. It is about **fairness and trust** in everyday transactions.
 
