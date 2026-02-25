@@ -94,7 +94,7 @@ genWalletBtn.addEventListener('click', async () => {
   genWalletBtn.disabled = true;
   genWalletBtn.textContent = 'Generating…';
   try {
-    const { generatePrivateKey, privateKeyToAccount } = await import('./client-signer.bundle.js');
+    const { generatePrivateKey, privateKeyToAccount } = await import('/wallet-gen.bundle.js');
     const privateKey = generatePrivateKey();
     const account    = privateKeyToAccount(privateKey);
 
