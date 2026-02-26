@@ -254,10 +254,8 @@ try {
 
     // Business registration (public when ADMIN_SECRET is not set)
     app.post('/api/businesses', (req, res) => {
-      const secret = process.env.ADMIN_SECRET;
-      if (secret && req.headers['x-admin-secret'] !== secret) {
-        return res.status(401).json({ error: 'Unauthorized' });
-      }
+      // Public endpoint — anyone can register a storefront.
+      // ADMIN_SECRET protects admin-only operations (list, delete, admin page), not registration.
       try {
         const business = createBusiness(req.body);
         res.status(201).json({
