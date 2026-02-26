@@ -63,7 +63,7 @@ Server starts at `http://localhost:4021`.
 - Server-side availability toggle (vendor marks themselves busy/available via manage token)
 - Two-phase fee collection — vendor payment + platform fee signed sequentially client-side
 - Transaction log in SQLite with fee status tracking
-- Admin view at `/admin` — all storefronts, wallet addresses, availability, QR download links
+- Admin view at `/admin` — all storefronts, wallet addresses, availability, QR download links, per-tenant transaction history, deliberate-friction delete flow
 - Client-side private key signing — keys never leave the browser, used once, discarded
 - On-chain verification via BaseScan after payment settles
 
@@ -237,10 +237,14 @@ All configuration via `.env`. See `.env.example` for all options.
 
 | Method | Path | Description |
 |--------|------|-------------|
-| `POST` | `/api/businesses` | Register a new storefront |
+| `POST` | `/api/businesses` | Register a new storefront (returns `manageToken`) |
 | `GET` | `/api/businesses` | List all storefronts (admin) |
+| `GET` | `/api/businesses/:slug/transactions` | Transaction history for a storefront (admin) |
+| `DELETE` | `/api/businesses/:slug` | Delete storefront + transactions (admin) |
 | `GET` | `/api/available/:slug` | Check slug availability |
 | `POST` | `/api/platform/fee` | Platform fee payment endpoint |
+| `POST` | `/api/p/:slug/record-transaction` | Record a completed vendor payment |
+| `PATCH` | `/api/p/:slug/record-transaction/:id/fee` | Update fee status on a transaction |
 | `GET` | `/admin` | Admin dashboard (protected by `ADMIN_SECRET`) |
 | `GET` | `/health` | Health check |
 
@@ -248,25 +252,28 @@ All configuration via `.env`. See `.env.example` for all options.
 
 ## Deployment
 
-### Vercel
+See [DEPLOYMENT.md](DEPLOYMENT.md) for the full step-by-step guide.
 
-See [VERCEL.md](VERCEL.md) for step-by-step instructions.
+**Recommended platform: Railway.** This is a stateful Express server with SQLite — Railway runs it as a persistent process with a mounted volume. Push to GitHub, set env vars, attach a volume, done. ~$5–8/month.
 
-Note: `client-signer.bundle.js` and `wallet-gen.bundle.js` are committed to the repo intentionally — the x402 packages they depend on are not published to npm and cannot be built in Vercel's environment.
+Key points:
+- `client-signer.bundle.js` and `wallet-gen.bundle.js` are committed to the repo intentionally — the x402 packages are not on npm and cannot be rebuilt in a CI environment
+- `railway.json` and `Procfile` are included — Railway uses `node server.js` directly, bypassing the prestart build hooks
+- Set `DATABASE_PATH=/data/naveens.sqlite` and mount a Railway volume at `/data`
+- For production: `NETWORK=eip155:8453` (Base Mainnet) + `FACILITATOR_URL=https://facilitator.coinbase.com`
+- For staging/QA: `NETWORK=eip155:84532` (Base Sepolia) + `FACILITATOR_URL=https://x402.org/facilitator`
 
-### VPS / Traditional Hosting
+### VPS / Self-hosted
 
 ```bash
 git clone <repo>
 npm install
 cp .env.example .env
 # Edit .env
-npm start
+node server.js
 ```
 
-Recommended: PM2 for process management, Litestream for SQLite backups.
-
-**Platforms:** Railway, Render, DigitalOcean App Platform, any Node.js VPS.
+Use PM2 for process management. Use Litestream for SQLite backups to S3/R2.
 
 ---
 
