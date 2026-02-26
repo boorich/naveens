@@ -3,6 +3,22 @@ import dotenv from 'dotenv';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import QRCode from 'qrcode';
+
+// Workaround: the pre-built x402 bundle manually sets Content-Length headers
+// with string.length rather than Buffer.byteLength. Node 18+ undici strictly
+// validates this and throws UND_ERR_REQ_CONTENT_LENGTH_MISMATCH.
+// Strip manual Content-Length and let undici calculate the correct value.
+if (typeof globalThis.fetch !== 'undefined') {
+  const _nativeFetch = globalThis.fetch;
+  globalThis.fetch = (url, init = {}) => {
+    if (init?.headers) {
+      const h = new Headers(init.headers);
+      h.delete('content-length');
+      init = { ...init, headers: h };
+    }
+    return _nativeFetch(url, init);
+  };
+}
 import * as paymentService from './lib/payment/service.js';
 import { registerProvider } from './lib/payment/provider.js';
 import { MockProvider } from './lib/payment/providers/mock.js';
