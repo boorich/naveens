@@ -44,6 +44,11 @@
         </div>
 
         <div class="field-group">
+          <label for="country">Country</label>
+          <input type="text" id="country" placeholder="e.g. Sri Lanka" autocomplete="country-name">
+        </div>
+
+        <div class="field-group">
           <label for="whatsapp">WhatsApp number</label>
           <input type="tel" id="whatsapp" placeholder="+94XXXXXXXXX" autocomplete="tel">
         </div>
@@ -107,6 +112,21 @@
         <button class="btn-action btn-visit" id="btn-visit">Open my page</button>
         <button class="btn-action btn-copy" id="btn-copy-url">Copy link</button>
         <button class="btn-action btn-share" id="btn-share-wa">Share on WhatsApp</button>
+      </div>
+
+      <!-- QR code -->
+      <div class="success-qr" id="success-qr" style="display:none;">
+        <p class="success-qr-label">Print or share this QR code</p>
+        <img class="success-qr-img" id="success-qr-img" alt="QR code for your page">
+        <a class="btn-action btn-copy" id="btn-download-qr" download>Download QR</a>
+      </div>
+
+      <!-- Manage token -->
+      <div class="manage-token-box" id="manage-token-box" style="display:none;">
+        <p class="manage-token-box-title">⚠ Save your manage token</p>
+        <p class="manage-token-box-desc">Use this to toggle your availability on your page. Store it safely — it won't be shown again.</p>
+        <div class="manage-token-value" id="success-manage-token"></div>
+        <button class="btn-copy-key" id="btn-copy-manage-token" type="button">Copy token</button>
       </div>
     </div>
 

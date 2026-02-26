@@ -935,5 +935,112 @@ h1, h2, h3 {
   .join-wrap { padding-left: 0; padding-right: 0; }
 }
 
+/* ─── USDC fee note ─────────────────────────────────────────────────────────── */
+.usdc-fee-note {
+  font-size: 12px;
+  color: var(--text-muted);
+  text-align: center;
+  margin-top: 4px;
+  letter-spacing: 0.01em;
+}
+
+/* ─── Success QR block ──────────────────────────────────────────────────────── */
+.success-qr {
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border-light);
+  text-align: center;
+}
+.success-qr-label {
+  font-size: 0.875rem;
+  color: var(--text-muted);
+  margin-bottom: 12px !important;
+}
+.success-qr-img {
+  display: block;
+  width: 160px;
+  height: 160px;
+  margin: 0 auto 14px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-light);
+}
+
+/* ─── Manage token box (success card) ──────────────────────────────────────── */
+.manage-token-box {
+  margin-top: 20px;
+  background: #fffbeb;
+  border: 1.5px solid #f59e0b;
+  border-radius: var(--radius-md);
+  padding: 16px;
+  text-align: left;
+}
+.manage-token-box-title {
+  font-weight: 700;
+  font-size: 0.875rem;
+  color: #92400e;
+  margin-bottom: 6px !important;
+}
+.manage-token-box-desc {
+  font-size: 0.8rem;
+  color: #78350f;
+  margin-bottom: 12px !important;
+}
+.manage-token-value {
+  background: #fef3c7;
+  border: 1px solid #fcd34d;
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  font-family: monospace;
+  font-size: 13px;
+  word-break: break-all;
+  margin-bottom: 10px;
+  color: #78350f;
+  font-weight: 600;
+}
+
+/* ─── Manage token overlay prompt ──────────────────────────────────────────── */
+.manage-token-prompt {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+.manage-token-card {
+  background: var(--bg);
+  border-radius: var(--radius-lg);
+  padding: 28px 24px;
+  width: 100%;
+  max-width: 360px;
+  box-shadow: var(--shadow-lg);
+}
+.manage-token-label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 12px;
+}
+.manage-token-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 14px;
+}
+.manage-token-error {
+  font-size: 0.8rem;
+  color: var(--error);
+  margin-top: 8px;
+}
+
+/* ─── Footer QR link ─────────────────────────────────────────────────────────── */
+.footer-qr-link {
+  color: var(--text-faint);
+  font-size: 12px;
+  text-decoration: none;
+}
+.footer-qr-link:hover { text-decoration: underline; color: var(--gold-600); }
+
 /* ─── Utilities ──────────────────────────────────────────────────────────────── */
 .hidden { display: none !important; }

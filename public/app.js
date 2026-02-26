@@ -3,31 +3,38 @@
  * Private key generation uses viem via the existing client-signer bundle.
  */
 
-const nameInput        = document.getElementById('name');
-const serviceInput     = document.getElementById('service-name');
-const descInput        = document.getElementById('description');
-const cityInput        = document.getElementById('city');
-const whatsappInput    = document.getElementById('whatsapp');
-const phoneInput       = document.getElementById('phone');
-const walletInput      = document.getElementById('wallet');
-const slugInput        = document.getElementById('slug');
-const lkrInput         = document.getElementById('lkr-rate');
-const slugPreview      = document.getElementById('slug-preview');
-const slugNote         = document.getElementById('slug-note');
-const walletNote       = document.getElementById('wallet-note');
-const errorBanner      = document.getElementById('error-banner');
-const errorBannerBot   = document.getElementById('error-banner-bottom');
-const submitBtn        = document.getElementById('btn-submit');
-const genWalletBtn     = document.getElementById('btn-gen-wallet');
-const genKeyBox        = document.getElementById('generated-key-box');
-const genPrivKeyEl     = document.getElementById('generated-private-key');
-const copyKeyBtn       = document.getElementById('btn-copy-key');
-const formSection      = document.getElementById('form-section');
-const successCard      = document.getElementById('success-card');
-const successUrl       = document.getElementById('success-url');
-const visitBtn         = document.getElementById('btn-visit');
-const copyUrlBtn       = document.getElementById('btn-copy-url');
-const shareWaBtn       = document.getElementById('btn-share-wa');
+const nameInput           = document.getElementById('name');
+const serviceInput        = document.getElementById('service-name');
+const descInput           = document.getElementById('description');
+const cityInput           = document.getElementById('city');
+const countryInput        = document.getElementById('country');
+const whatsappInput       = document.getElementById('whatsapp');
+const phoneInput          = document.getElementById('phone');
+const walletInput         = document.getElementById('wallet');
+const slugInput           = document.getElementById('slug');
+const lkrInput            = document.getElementById('lkr-rate');
+const slugPreview         = document.getElementById('slug-preview');
+const slugNote            = document.getElementById('slug-note');
+const walletNote          = document.getElementById('wallet-note');
+const errorBanner         = document.getElementById('error-banner');
+const errorBannerBot      = document.getElementById('error-banner-bottom');
+const submitBtn           = document.getElementById('btn-submit');
+const genWalletBtn        = document.getElementById('btn-gen-wallet');
+const genKeyBox           = document.getElementById('generated-key-box');
+const genPrivKeyEl        = document.getElementById('generated-private-key');
+const copyKeyBtn          = document.getElementById('btn-copy-key');
+const formSection         = document.getElementById('form-section');
+const successCard         = document.getElementById('success-card');
+const successUrl          = document.getElementById('success-url');
+const visitBtn            = document.getElementById('btn-visit');
+const copyUrlBtn          = document.getElementById('btn-copy-url');
+const shareWaBtn          = document.getElementById('btn-share-wa');
+const successQrSection    = document.getElementById('success-qr');
+const successQrImg        = document.getElementById('success-qr-img');
+const downloadQrBtn       = document.getElementById('btn-download-qr');
+const manageTokenBox      = document.getElementById('manage-token-box');
+const manageTokenValueEl  = document.getElementById('success-manage-token');
+const copyManageTokenBtn  = document.getElementById('btn-copy-manage-token');
 
 let slugManuallyEdited = false;
 let slugCheckTimer     = null;
@@ -143,6 +150,7 @@ submitBtn.addEventListener('click', async () => {
   const serviceName = serviceInput.value.trim();
   const description = descInput.value.trim();
   const city        = cityInput.value.trim();
+  const country     = countryInput?.value.trim() || '';
   const whatsapp    = whatsappInput.value.trim();
   const phone       = phoneInput.value.trim();
   const wallet      = walletInput.value.trim();
@@ -167,7 +175,7 @@ submitBtn.addEventListener('click', async () => {
     const res = await fetch('/api/businesses', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, serviceName, description, city, whatsapp, phone, wallet, slug, lkrPerUsdc }),
+      body: JSON.stringify({ name, serviceName, description, city, country, whatsapp, phone, wallet, slug, lkrPerUsdc }),
     });
     const data = await res.json();
     if (!res.ok) {
@@ -178,7 +186,7 @@ submitBtn.addEventListener('click', async () => {
     generatedKey = null;
 
     const pageUrl = `${window.location.origin}/p/${data.slug}`;
-    showSuccess(pageUrl, whatsapp);
+    showSuccess(pageUrl, data.slug, whatsapp, data.manageToken);
   } catch (err) {
     showError(err.message);
   } finally {
@@ -188,7 +196,7 @@ submitBtn.addEventListener('click', async () => {
 });
 
 // ── Success state ─────────────────────────────────────────────────────────────
-function showSuccess(pageUrl, whatsapp) {
+function showSuccess(pageUrl, slug, whatsapp, manageToken) {
   formSection.style.display = 'none';
   successCard.style.display = 'block';
   successUrl.textContent    = pageUrl;
@@ -206,6 +214,31 @@ function showSuccess(pageUrl, whatsapp) {
   shareWaBtn.onclick = () => {
     window.open(`https://wa.me/?text=${encodeURIComponent(shareText)}`, '_blank');
   };
+
+  // QR code
+  if (successQrSection && successQrImg && slug) {
+    const qrUrl = `/api/p/${slug}/qr`;
+    successQrImg.src = qrUrl;
+    if (downloadQrBtn) {
+      downloadQrBtn.href     = qrUrl;
+      downloadQrBtn.download = `${slug}-qr.png`;
+    }
+    successQrSection.style.display = 'block';
+  }
+
+  // Manage token
+  if (manageToken && manageTokenBox && manageTokenValueEl) {
+    manageTokenValueEl.textContent = manageToken;
+    manageTokenBox.style.display   = 'block';
+    if (copyManageTokenBtn) {
+      copyManageTokenBtn.onclick = () => {
+        navigator.clipboard.writeText(manageToken).then(() => {
+          copyManageTokenBtn.textContent = 'Copied!';
+          setTimeout(() => { copyManageTokenBtn.textContent = 'Copy token'; }, 2000);
+        });
+      };
+    }
+  }
 
   successCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }

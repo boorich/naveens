@@ -139,9 +139,24 @@
     </div>
   </section>
 
+  <!-- Vendor manage token prompt (hidden, shown when toggling availability without saved token) -->
+  <div class="manage-token-prompt" id="manage-token-prompt" style="display:none;">
+    <div class="manage-token-card">
+      <p class="manage-token-label">Enter your manage token to update availability</p>
+      <input type="password" id="manage-token-input" class="private-key-input" placeholder="Your manage token" autocomplete="off">
+      <div class="manage-token-actions">
+        <button class="btn btn-green" id="manage-token-confirm">Confirm</button>
+        <button class="btn btn-white" id="manage-token-cancel">Cancel</button>
+      </div>
+      <p class="manage-token-error" id="manage-token-error" style="display:none;"></p>
+    </div>
+  </div>
+
   <footer class="footer">
     <p>
       <span class="x402-brand">Powered by x402</span>
+      &nbsp;·&nbsp;
+      <a class="footer-qr-link" id="footer-qr-link" href="#" target="_blank">Print QR</a>
     </p>
   </footer>
 
