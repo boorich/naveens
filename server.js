@@ -11,7 +11,15 @@ import QRCode from 'qrcode';
 if (typeof globalThis.fetch !== 'undefined') {
   const _nativeFetch = globalThis.fetch;
   globalThis.fetch = (url, init = {}) => {
-    if (init?.headers) {
+    if (init?.body && typeof init.body === 'string') {
+      // undici on Node 22 miscalculates Content-Length for string bodies
+      // (uses string.length instead of Buffer.byteLength). Converting to
+      // Buffer gives undici an exact byte count, eliminating the mismatch.
+      const buf = Buffer.from(init.body, 'utf8');
+      const h = new Headers(init.headers || {});
+      h.delete('content-length');
+      init = { ...init, headers: h, body: buf };
+    } else if (init?.headers) {
       const h = new Headers(init.headers);
       h.delete('content-length');
       init = { ...init, headers: h };
