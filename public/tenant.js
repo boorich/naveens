@@ -528,7 +528,7 @@ async function runPaymentChallenge(endpoint, amount, label, privateKey) {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'PAYMENT-SIGNATURE': btoa(JSON.stringify(signed)),
+      'X-Payment': btoa(JSON.stringify(signed)),
     },
     body: JSON.stringify({ amount, label }),
   });
