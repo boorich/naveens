@@ -185,6 +185,17 @@ try {
       res.json({ ok: true });
     });
 
+    // Merchant self-service: view own transactions using manage token
+    slugRouter.get('/my-transactions', (req, res) => {
+      const token    = req.headers['x-manage-token'] || req.query.token;
+      const business = getBySlug(req.params.slug);
+      if (!business) return res.status(404).json({ error: 'Not found' });
+      if (!token || token !== business.manageToken) {
+        return res.status(403).json({ error: 'Invalid token' });
+      }
+      res.json(listTransactionsBySlug(req.params.slug));
+    });
+
     slugRouter.post('/pay', async (req, res) => {
       const business = getBySlug(req.params.slug);
       if (!business) return res.status(404).json({ error: 'Not found' });

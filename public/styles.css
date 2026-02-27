@@ -1234,3 +1234,120 @@ h1, h2, h3 {
   color: var(--text-secondary);
   margin-bottom: 4px;
 }
+
+/* ─── My Payments modal ────────────────────────────────────────────────────── */
+.footer-link-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-secondary);
+  font-size: 0.82rem;
+  padding: 0;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.footer-link-btn:hover { color: var(--gold-600); }
+
+.my-payments-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.45);
+  z-index: 9998;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 0;
+}
+
+.my-payments-modal {
+  background: var(--surface);
+  border-radius: 20px 20px 0 0;
+  width: 100%;
+  max-width: 480px;
+  max-height: 75vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 -8px 32px rgba(0,0,0,0.18);
+  overflow: hidden;
+}
+
+.my-payments-header {
+  display: flex;
+  align-items: center;
+  padding: 18px 20px 14px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.my-payments-title {
+  font-family: var(--font-heading);
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  flex: 1;
+  margin: 0;
+}
+.my-payments-close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-secondary);
+  font-size: 1.1rem;
+  padding: 0 2px;
+}
+.my-payments-close:hover { color: var(--text-primary); }
+
+.my-payments-hint {
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  margin: 0 0 12px;
+}
+
+#my-payments-auth {
+  padding: 16px 20px;
+}
+.my-payments-auth-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+#my-payments-list {
+  overflow-y: auto;
+  flex: 1;
+}
+
+.my-payments-loading,
+.my-payments-empty {
+  padding: 24px 20px;
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: 0.88rem;
+}
+
+.my-payments-row {
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--border);
+}
+.my-payments-row:last-child { border-bottom: none; }
+
+.my-payments-row-main {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 3px;
+}
+.my-payments-amount {
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: var(--text-primary);
+}
+.my-payments-tx-link {
+  font-size: 0.78rem;
+  color: var(--green-700);
+  text-decoration: none;
+}
+.my-payments-tx-link:hover { text-decoration: underline; }
+.my-payments-date {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}

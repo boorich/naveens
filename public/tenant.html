@@ -157,8 +157,36 @@
       <span class="x402-brand">Powered by x402</span>
       &nbsp;·&nbsp;
       <a class="footer-qr-link" id="footer-qr-link" href="#" target="_blank">Print QR</a>
+      &nbsp;·&nbsp;
+      <button class="footer-link-btn" id="footer-my-payments">My payments</button>
     </p>
   </footer>
+
+  <!-- My Payments modal -->
+  <div class="my-payments-overlay" id="my-payments-overlay" style="display:none;">
+    <div class="my-payments-modal">
+      <div class="my-payments-header">
+        <h3 class="my-payments-title">Recent Payments</h3>
+        <button class="my-payments-close" id="my-payments-close">✕</button>
+      </div>
+
+      <!-- Token prompt (shown when no token saved) -->
+      <div id="my-payments-auth" style="display:none;">
+        <p class="my-payments-hint">Enter your manage token to view your payments.</p>
+        <input type="password" id="my-payments-token-input" class="private-key-input"
+               placeholder="Your manage token" autocomplete="off">
+        <div class="my-payments-auth-actions">
+          <button class="btn btn-green" id="my-payments-token-confirm">View payments</button>
+          <button class="btn btn-white" id="my-payments-token-cancel">Cancel</button>
+        </div>
+      </div>
+
+      <!-- Transaction list -->
+      <div id="my-payments-list" style="display:none;">
+        <div id="my-payments-body"></div>
+      </div>
+    </div>
+  </div>
 
   <script type="module" src="/tenant.js"></script>
   <script type="module" src="/wallet-widget.js"></script>
