@@ -662,10 +662,11 @@ function initMyPayments() {
   if (!overlay || !footerBtn) return;
 
   function open() {
-    overlay.style.display = 'flex';
-    listPanel.style.display = 'block';
-    body.innerHTML = '<p class="my-payments-loading">Loading…</p>';
-    requireManageToken((token) => fetchAndShow(token));
+    requireManageToken((token) => {
+      overlay.style.display = 'flex';
+      listPanel.style.display = 'block';
+      fetchAndShow(token);
+    });
   }
 
   function close() {
