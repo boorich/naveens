@@ -634,14 +634,20 @@ function initShare() {
 
 // ── UI helpers ────────────────────────────────────────────────────────────────
 function setLoading(on, message) {
-  const loadingEl = document.getElementById('payment-loading');
-  const loadingText = loadingEl?.querySelector('p');
-  if (loadingText && message) loadingText.textContent = message;
-  if (loadingEl) loadingEl.style.display = on ? 'block' : 'none';
+  const btn = document.getElementById('btn-pay');
   const successEl = document.getElementById('payment-success');
   if (successEl && on) successEl.style.display = 'none';
   document.getElementById('payment-error').style.display = 'none';
-  document.getElementById('btn-pay').disabled = on;
+
+  if (on) {
+    btn.disabled = true;
+    btn.innerHTML = `<span class="pay-spinner"></span>${message || t('processing')}`;
+    btn.classList.add('btn-loading');
+  } else {
+    btn.disabled = false;
+    btn.textContent = t('payBtn');
+    btn.classList.remove('btn-loading');
+  }
 }
 
 function showError(msg) {

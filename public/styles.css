@@ -570,6 +570,26 @@ h1, h2, h3 {
 }
 @keyframes spin { to { transform: rotate(360deg); } }
 
+/* Pay button loading state */
+.btn-loading {
+  opacity: 0.85;
+  cursor: not-allowed;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+.pay-spinner {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255,255,255,0.35);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.65s linear infinite;
+  flex-shrink: 0;
+}
+
 .payment-error {
   padding: 14px 16px;
   background: var(--red-50);
