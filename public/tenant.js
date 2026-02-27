@@ -264,13 +264,8 @@ function initAvailability() {
   badge.classList.toggle('busy', !isAvail);
   if (badgeText) badgeText.textContent = isAvail ? t('available') : t('busy');
 
-  badge.addEventListener('click', async () => {
-    const savedToken = localStorage.getItem(`manage-token:${slug}`);
-    if (savedToken) {
-      await toggleAvailability(savedToken, badge, badgeText);
-    } else {
-      showManagePrompt(badge, badgeText);
-    }
+  badge.addEventListener('click', () => {
+    requireManageToken((token) => toggleAvailability(token, badge, badgeText));
   });
 }
 
@@ -284,7 +279,7 @@ async function toggleAvailability(token, badge, badgeText) {
     });
     if (res.status === 403) {
       localStorage.removeItem(`manage-token:${slug}`);
-      showManagePrompt(badge, badgeText);
+      requireManageToken((token) => toggleAvailability(token, badge, badgeText));
       return;
     }
     const data = await res.json();
@@ -296,10 +291,19 @@ async function toggleAvailability(token, badge, badgeText) {
   }
 }
 
-function showManagePrompt(badge, badgeText) {
-  const overlay  = document.getElementById('manage-token-prompt');
-  const input    = document.getElementById('manage-token-input');
-  const errorEl  = document.getElementById('manage-token-error');
+// ─── Shared manage-token gate ─────────────────────────────────────────────────
+// Call requireManageToken(cb) anywhere; cb(token) fires immediately if already
+// saved, or after the user enters it once in the shared prompt.
+function requireManageToken(callback) {
+  const saved = localStorage.getItem(`manage-token:${slug}`);
+  if (saved) { callback(saved); return; }
+  showUnlockPrompt(callback);
+}
+
+function showUnlockPrompt(callback) {
+  const overlay    = document.getElementById('manage-token-prompt');
+  const input      = document.getElementById('manage-token-input');
+  const errorEl    = document.getElementById('manage-token-error');
   const confirmBtn = document.getElementById('manage-token-confirm');
   const cancelBtn  = document.getElementById('manage-token-cancel');
 
@@ -310,36 +314,18 @@ function showManagePrompt(badge, badgeText) {
 
   const close = () => { overlay.style.display = 'none'; };
 
-  const onConfirm = async () => {
+  const onConfirm = () => {
     const token = input.value.trim();
     if (!token) return;
-    const currentlyAvailable = !badge.classList.contains('busy');
-    try {
-      const res = await fetch(`${apiBase}/availability`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ available: !currentlyAvailable, token }),
-      });
-      if (res.status === 403) {
-        errorEl.textContent = t('manageError');
-        errorEl.style.display = 'block';
-        return;
-      }
-      const data = await res.json();
-      localStorage.setItem(`manage-token:${slug}`, token);
-      badge.classList.toggle('busy', !data.isAvailable);
-      config.isAvailable = data.isAvailable;
-      if (badgeText) badgeText.textContent = data.isAvailable ? t('available') : t('busy');
-      close();
-    } catch (err) {
-      errorEl.textContent = t('manageError');
-      errorEl.style.display = 'block';
-    }
+    // Save optimistically — the callback clears it if the server returns 403
+    localStorage.setItem(`manage-token:${slug}`, token);
+    close();
+    callback(token);
   };
 
   confirmBtn.onclick = onConfirm;
   cancelBtn.onclick  = close;
-  input.onkeydown    = (e) => { if (e.key === 'Enter') onConfirm(); if (e.key === 'Escape') close(); };
+  input.onkeydown = (e) => { if (e.key === 'Enter') onConfirm(); if (e.key === 'Escape') close(); };
 }
 
 // ── Preset amount buttons ─────────────────────────────────────────────────────
@@ -668,51 +654,35 @@ const wwClear = () => localStorage.removeItem(WW_KEY);
 
 // ─── My Payments (merchant self-service) ──────────────────────────────────────
 function initMyPayments() {
-  const overlay    = document.getElementById('my-payments-overlay');
-  const closeBtn   = document.getElementById('my-payments-close');
-  const footerBtn  = document.getElementById('footer-my-payments');
-  const authPanel  = document.getElementById('my-payments-auth');
-  const listPanel  = document.getElementById('my-payments-list');
-  const tokenInput = document.getElementById('my-payments-token-input');
-  const confirmBtn = document.getElementById('my-payments-token-confirm');
-  const cancelBtn  = document.getElementById('my-payments-token-cancel');
-  const body       = document.getElementById('my-payments-body');
+  const overlay   = document.getElementById('my-payments-overlay');
+  const closeBtn  = document.getElementById('my-payments-close');
+  const footerBtn = document.getElementById('footer-my-payments');
+  const listPanel = document.getElementById('my-payments-list');
+  const body      = document.getElementById('my-payments-body');
   if (!overlay || !footerBtn) return;
-
-  const MANAGE_KEY = () => `manage-token:${slug}`;
 
   function open() {
     overlay.style.display = 'flex';
-    const saved = localStorage.getItem(MANAGE_KEY());
-    if (saved) {
-      fetchAndShow(saved);
-    } else {
-      authPanel.style.display = 'block';
-      listPanel.style.display = 'none';
-      tokenInput.value = '';
-      tokenInput.focus();
-    }
+    listPanel.style.display = 'block';
+    body.innerHTML = '<p class="my-payments-loading">Loading…</p>';
+    requireManageToken((token) => fetchAndShow(token));
   }
 
   function close() {
     overlay.style.display = 'none';
-    authPanel.style.display = 'none';
-    listPanel.style.display = 'none';
   }
 
   async function fetchAndShow(token) {
-    authPanel.style.display = 'none';
-    listPanel.style.display = 'block';
     body.innerHTML = '<p class="my-payments-loading">Loading…</p>';
     try {
       const res = await fetch(`${apiBase}/my-transactions`, {
         headers: { 'x-manage-token': token },
       });
       if (res.status === 403) {
-        localStorage.removeItem(MANAGE_KEY());
-        body.innerHTML = '<p class="my-payments-empty">Invalid token. Please try again.</p>';
-        authPanel.style.display = 'block';
-        listPanel.style.display = 'none';
+        localStorage.removeItem(`manage-token:${slug}`);
+        body.innerHTML = '';
+        // Re-prompt via the shared gate; keep the modal open
+        requireManageToken((t) => fetchAndShow(t));
         return;
       }
       const txs = await res.json();
@@ -720,12 +690,9 @@ function initMyPayments() {
         body.innerHTML = '<p class="my-payments-empty">No payments yet.</p>';
         return;
       }
-      // Save token for next time
-      localStorage.setItem(MANAGE_KEY(), token);
       body.innerHTML = txs.map(tx => {
-        const date  = new Date(tx.createdAt + 'Z').toLocaleString();
-        const total = (tx.vendorAmount + tx.feeAmount).toFixed(4);
-        const link  = tx.vendorTx
+        const date = new Date(tx.createdAt + 'Z').toLocaleString();
+        const link = tx.vendorTx
           ? `<a class="my-payments-tx-link" href="https://sepolia.basescan.org/tx/${tx.vendorTx}" target="_blank" rel="noopener">↗ BaseScan</a>`
           : '';
         return `
@@ -737,22 +704,12 @@ function initMyPayments() {
             <div class="my-payments-date">${date}</div>
           </div>`;
       }).join('');
-    } catch (err) {
-      body.innerHTML = `<p class="my-payments-empty">Could not load payments.</p>`;
+    } catch {
+      body.innerHTML = '<p class="my-payments-empty">Could not load payments.</p>';
     }
   }
 
   footerBtn.addEventListener('click', open);
   closeBtn.addEventListener('click', close);
-  cancelBtn?.addEventListener('click', close);
   overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
-
-  confirmBtn?.addEventListener('click', () => {
-    const token = tokenInput.value.trim();
-    if (!token) return;
-    fetchAndShow(token);
-  });
-  tokenInput?.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') confirmBtn?.click();
-  });
 }
