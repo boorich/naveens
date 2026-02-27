@@ -155,6 +155,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   initPayButton();
   initShare();
   initQrFooter();
+  initWalletWidget();
 });
 
 async function loadConfig() {
@@ -419,8 +420,11 @@ async function handlePayment() {
   const keyInput     = document.getElementById('private-key-input');
   const keyStatus    = document.getElementById('private-key-status');
 
-  // Helper: get (or prompt for) private key
+  // Helper: get (or prompt for) private key — checks wallet widget storage first
   const getPrivateKey = () => {
+    const stored = wwLoad();
+    if (stored?.key) return stored.key;        // ← one-tap if widget has a key
+
     const k = keyInput.value.trim();
     if (!k) {
       keyContainer.style.display = 'block';
@@ -437,6 +441,9 @@ async function handlePayment() {
     }
     return k;
   };
+
+  // Track whether key came from storage (to decide whether to offer saving after payment)
+  const keyWasStored = !!wwLoad();
 
   try {
     // ── Step 1: vendor payment ────────────────────────────────────────────────
@@ -485,13 +492,21 @@ async function handlePayment() {
       }
     }
 
-    // Clear key
+    // Capture key before clearing — needed to offer saving it
+    const justUsedKey = keyInput.value.trim();
+
+    // Clear manual input
     keyInput.value    = '';
     keyInput.disabled = false;
     if (statusSpan) statusSpan.textContent = t('keyCleared');
     setTimeout(() => { keyContainer.style.display = 'none'; keyStatus.style.display = 'none'; }, 600);
 
     await showSuccess(vendorUsdc, vendorTx, config.network || 'eip155:84532');
+
+    // Offer to save if the key was typed manually (not from the widget)
+    if (!keyWasStored && justUsedKey) {
+      wwOfferSave(justUsedKey);
+    }
 
   } catch (error) {
     keyInput.value    = '';
@@ -634,4 +649,183 @@ function showError(msg) {
   el.textContent = msg;
   document.getElementById('payment-error').style.display = 'block';
   setTimeout(() => { document.getElementById('payment-error').style.display = 'none'; }, 6000);
+}
+
+// ─── Wallet Widget ─────────────────────────────────────────────────────────────
+// Entirely client-side. The server never sees the private key.
+// Key stored in localStorage scoped to this origin only.
+// This is the non-custodial seam: nothing below touches the network.
+
+const WW_KEY = 'x402:wallet:v1';
+
+function wwLoad() {
+  try { return JSON.parse(localStorage.getItem(WW_KEY)); } catch { return null; }
+}
+
+function wwSave(privateKey, address) {
+  localStorage.setItem(WW_KEY, JSON.stringify({ key: privateKey, address, savedAt: Date.now() }));
+}
+
+function wwClear() {
+  localStorage.removeItem(WW_KEY);
+}
+
+function wwMaskKey(key) {
+  if (!key) return '';
+  return key.slice(0, 6) + '•'.repeat(56) + key.slice(-4);
+}
+
+function wwShorten(address) {
+  if (!address) return '';
+  return address.slice(0, 10) + '…' + address.slice(-6);
+}
+
+function wwSetPanel(id) {
+  ['ww-no-key', 'ww-has-key', 'ww-add-form', 'ww-rotate-form', 'ww-save-prompt'].forEach(p => {
+    const el = document.getElementById(p);
+    if (el) el.style.display = (p === id) ? 'block' : 'none';
+  });
+}
+
+function wwRender() {
+  const stored = wwLoad();
+  const badge  = document.getElementById('ww-badge');
+  if (stored) {
+    document.getElementById('ww-address').textContent     = wwShorten(stored.address);
+    const keyDisplay = document.getElementById('ww-key-display');
+    keyDisplay.textContent          = wwMaskKey(stored.key);
+    keyDisplay.dataset.revealed     = 'false';
+    keyDisplay.dataset.key          = stored.key;
+    document.getElementById('ww-btn-reveal').textContent  = 'Reveal';
+    if (badge) badge.style.display  = 'inline';
+    wwSetPanel('ww-has-key');
+  } else {
+    if (badge) badge.style.display = 'none';
+    wwSetPanel('ww-no-key');
+  }
+}
+
+// Offered after a successful manual-key payment
+let _wwPendingKey = null;
+function wwOfferSave(key) {
+  _wwPendingKey = key;
+  wwSetPanel('ww-save-prompt');
+  document.getElementById('wallet-widget')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+async function wwImportWalletGen() {
+  const { generatePrivateKey, privateKeyToAccount } = await import('/wallet-gen.bundle.js');
+  return { generatePrivateKey, privateKeyToAccount };
+}
+
+function initWalletWidget() {
+  wwRender();
+
+  // ── Add key (paste) ────────────────────────────────────────────────────────
+  document.getElementById('ww-btn-add')?.addEventListener('click', () => wwSetPanel('ww-add-form'));
+  document.getElementById('ww-btn-add-cancel')?.addEventListener('click', () => wwRender());
+  document.getElementById('ww-btn-save')?.addEventListener('click', async () => {
+    const input = document.getElementById('ww-add-input');
+    const key   = input.value.trim();
+    if (!key || !key.startsWith('0x') || key.length !== 66) return;
+    const { privateKeyToAccount } = await wwImportWalletGen();
+    wwSave(key, privateKeyToAccount(key).address);
+    input.value = '';
+    wwRender();
+  });
+
+  // ── Generate new key ───────────────────────────────────────────────────────
+  document.getElementById('ww-btn-gen')?.addEventListener('click', async () => {
+    const { generatePrivateKey, privateKeyToAccount } = await wwImportWalletGen();
+    const key = generatePrivateKey();
+    wwSave(key, privateKeyToAccount(key).address);
+    wwRender();
+  });
+
+  // ── Reveal / hide stored key ───────────────────────────────────────────────
+  document.getElementById('ww-btn-reveal')?.addEventListener('click', () => {
+    const el  = document.getElementById('ww-key-display');
+    const btn = document.getElementById('ww-btn-reveal');
+    const revealed = el.dataset.revealed === 'true';
+    el.textContent     = revealed ? wwMaskKey(el.dataset.key) : el.dataset.key;
+    el.dataset.revealed = String(!revealed);
+    btn.textContent    = revealed ? 'Reveal' : 'Hide';
+  });
+
+  // ── Copy stored key ────────────────────────────────────────────────────────
+  document.getElementById('ww-btn-copy-key')?.addEventListener('click', () => {
+    const stored = wwLoad();
+    if (!stored) return;
+    navigator.clipboard.writeText(stored.key).then(() => {
+      const btn = document.getElementById('ww-btn-copy-key');
+      btn.textContent = 'Copied!';
+      setTimeout(() => { btn.textContent = 'Copy'; }, 2000);
+    });
+  });
+
+  // ── Forget ─────────────────────────────────────────────────────────────────
+  document.getElementById('ww-btn-forget')?.addEventListener('click', () => {
+    if (confirm('Remove this key from this device? Make sure you have it saved elsewhere.')) {
+      wwClear();
+      wwRender();
+    }
+  });
+
+  // ── Rotate — generate new key, wait for user to move funds ────────────────
+  document.getElementById('ww-btn-rotate')?.addEventListener('click', async () => {
+    const { generatePrivateKey, privateKeyToAccount } = await wwImportWalletGen();
+    const newKey     = generatePrivateKey();
+    const newAddress = privateKeyToAccount(newKey).address;
+    const newDisplay = document.getElementById('ww-new-key-display');
+    newDisplay.textContent      = wwMaskKey(newKey);
+    newDisplay.dataset.key      = newKey;
+    newDisplay.dataset.revealed = 'false';
+    document.getElementById('ww-new-address').textContent        = wwShorten(newAddress);
+    document.getElementById('ww-btn-new-reveal').textContent     = 'Reveal';
+    wwSetPanel('ww-rotate-form');
+  });
+
+  document.getElementById('ww-btn-new-reveal')?.addEventListener('click', () => {
+    const el  = document.getElementById('ww-new-key-display');
+    const btn = document.getElementById('ww-btn-new-reveal');
+    const revealed = el.dataset.revealed === 'true';
+    el.textContent      = revealed ? wwMaskKey(el.dataset.key) : el.dataset.key;
+    el.dataset.revealed = String(!revealed);
+    btn.textContent     = revealed ? 'Reveal' : 'Hide';
+  });
+
+  document.getElementById('ww-btn-new-copy')?.addEventListener('click', () => {
+    const key = document.getElementById('ww-new-key-display').dataset.key;
+    if (!key) return;
+    navigator.clipboard.writeText(key).then(() => {
+      const btn = document.getElementById('ww-btn-new-copy');
+      btn.textContent = 'Copied!';
+      setTimeout(() => { btn.textContent = 'Copy'; }, 2000);
+    });
+  });
+
+  document.getElementById('ww-btn-activate')?.addEventListener('click', async () => {
+    const el  = document.getElementById('ww-new-key-display');
+    const key = el.dataset.key;
+    if (!key) return;
+    const { privateKeyToAccount } = await wwImportWalletGen();
+    wwSave(key, privateKeyToAccount(key).address);
+    wwRender();
+  });
+
+  document.getElementById('ww-btn-rotate-cancel')?.addEventListener('click', () => wwRender());
+
+  // ── Save prompt (after manual payment) ────────────────────────────────────
+  document.getElementById('ww-btn-confirm-save')?.addEventListener('click', async () => {
+    if (!_wwPendingKey) return;
+    const { privateKeyToAccount } = await wwImportWalletGen();
+    wwSave(_wwPendingKey, privateKeyToAccount(_wwPendingKey).address);
+    _wwPendingKey = null;
+    wwRender();
+  });
+
+  document.getElementById('ww-btn-save-skip')?.addEventListener('click', () => {
+    _wwPendingKey = null;
+    wwRender();
+  });
 }

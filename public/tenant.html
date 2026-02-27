@@ -127,6 +127,78 @@
     </div>
   </section>
 
+  <!-- Wallet Widget — entirely client-side, server never sees the key -->
+  <section class="wallet-widget" id="wallet-widget">
+    <div class="ww-header">
+      <span class="ww-title">My Payment Key</span>
+      <span class="ww-badge" id="ww-badge" style="display:none;">Saved on device</span>
+    </div>
+
+    <!-- No key stored -->
+    <div id="ww-no-key">
+      <p class="ww-hint">Add your key here for one-tap payments. It never leaves this device — the server cannot see it.</p>
+      <div class="ww-btn-row">
+        <button class="btn-ww btn-ww--primary" id="ww-btn-add">Add my key</button>
+        <button class="btn-ww btn-ww--secondary" id="ww-btn-gen">Generate new key</button>
+      </div>
+    </div>
+
+    <!-- Key is stored -->
+    <div id="ww-has-key" style="display:none;">
+      <div class="ww-address-row">
+        <span class="ww-label-small">Address</span>
+        <span class="ww-address" id="ww-address"></span>
+      </div>
+      <div class="ww-key-row">
+        <span class="ww-key-value" id="ww-key-display"></span>
+        <button class="btn-ww-inline" id="ww-btn-reveal">Reveal</button>
+        <button class="btn-ww-inline" id="ww-btn-copy-key">Copy</button>
+      </div>
+      <p class="ww-hint ww-hint--edu">Keep your balance low — treat this like cash in a pocket. Rotate when it feels full.</p>
+      <div class="ww-btn-row">
+        <button class="btn-ww btn-ww--secondary" id="ww-btn-rotate">Rotate key</button>
+        <button class="btn-ww btn-ww--danger" id="ww-btn-forget">Forget</button>
+      </div>
+    </div>
+
+    <!-- Add key form -->
+    <div id="ww-add-form" style="display:none;">
+      <label class="ww-label-small" for="ww-add-input">Paste your private key</label>
+      <input type="password" id="ww-add-input" class="ww-input" placeholder="0x…" autocomplete="off" spellcheck="false">
+      <div class="ww-btn-row">
+        <button class="btn-ww btn-ww--primary" id="ww-btn-save">Save on this device</button>
+        <button class="btn-ww btn-ww--secondary" id="ww-btn-add-cancel">Cancel</button>
+      </div>
+    </div>
+
+    <!-- Rotate form — new key generated, waiting to activate -->
+    <div id="ww-rotate-form" style="display:none;">
+      <p class="ww-hint">New key ready. Move your USDC to the new address first, then activate.</p>
+      <div class="ww-address-row">
+        <span class="ww-label-small">New address</span>
+        <span class="ww-address" id="ww-new-address"></span>
+      </div>
+      <div class="ww-key-row">
+        <span class="ww-key-value" id="ww-new-key-display"></span>
+        <button class="btn-ww-inline" id="ww-btn-new-reveal">Reveal</button>
+        <button class="btn-ww-inline" id="ww-btn-new-copy">Copy</button>
+      </div>
+      <div class="ww-btn-row">
+        <button class="btn-ww btn-ww--primary" id="ww-btn-activate">Activate new key</button>
+        <button class="btn-ww btn-ww--secondary" id="ww-btn-rotate-cancel">Cancel</button>
+      </div>
+    </div>
+
+    <!-- Save prompt — offered after a successful manual-key payment -->
+    <div id="ww-save-prompt" style="display:none;">
+      <p class="ww-hint">Save this key for one-tap payments next time?</p>
+      <div class="ww-btn-row">
+        <button class="btn-ww btn-ww--primary" id="ww-btn-confirm-save">Save on this device</button>
+        <button class="btn-ww btn-ww--secondary" id="ww-btn-save-skip">Not now</button>
+      </div>
+    </div>
+  </section>
+
   <!-- Share section -->
   <section class="share-section">
     <h2 class="section-title" id="share-title">Recommend this seller</h2>

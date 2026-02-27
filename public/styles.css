@@ -1044,3 +1044,173 @@ h1, h2, h3 {
 
 /* ─── Utilities ──────────────────────────────────────────────────────────────── */
 .hidden { display: none !important; }
+
+/* ─── Wallet Widget ────────────────────────────────────────────────────────── */
+.wallet-widget {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 20px;
+  margin: 16px auto;
+  max-width: 480px;
+}
+
+.ww-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.ww-title {
+  font-family: var(--font-heading);
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  letter-spacing: 0.01em;
+}
+
+.ww-badge {
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--green-700, #15803d);
+  background: var(--green-50, #f0fdf4);
+  border: 1px solid var(--green-200, #bbf7d0);
+  border-radius: 20px;
+  padding: 2px 8px;
+}
+
+.ww-hint {
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  margin: 0 0 14px;
+}
+
+.ww-hint--edu {
+  font-style: italic;
+  color: var(--text-tertiary, var(--text-secondary));
+  border-left: 2px solid var(--gold-400, #d4a017);
+  padding-left: 10px;
+  margin: 12px 0;
+}
+
+.ww-label-small {
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.ww-address-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.ww-address {
+  font-family: 'Courier New', monospace;
+  font-size: 0.82rem;
+  color: var(--text-primary);
+  word-break: break-all;
+}
+
+.ww-key-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--surface-alt, #f8f7f4);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 10px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.ww-key-value {
+  font-family: 'Courier New', monospace;
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  flex: 1;
+  word-break: break-all;
+  letter-spacing: 0.02em;
+}
+
+.btn-ww-inline {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--green-700, #15803d);
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 3px 8px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s;
+}
+.btn-ww-inline:hover { background: var(--surface-alt, #f1f0ec); }
+
+.ww-btn-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.btn-ww {
+  font-size: 0.82rem;
+  font-weight: 600;
+  border-radius: 8px;
+  padding: 8px 14px;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: opacity 0.15s, background 0.15s;
+}
+.btn-ww:hover { opacity: 0.85; }
+
+.btn-ww--primary {
+  background: var(--green-800, #166534);
+  color: #fff;
+  border-color: var(--green-800, #166534);
+}
+
+.btn-ww--secondary {
+  background: transparent;
+  color: var(--text-primary);
+  border-color: var(--border);
+}
+.btn-ww--secondary:hover { background: var(--surface-alt, #f1f0ec); }
+
+.btn-ww--danger {
+  background: transparent;
+  color: #b91c1c;
+  border-color: #fecaca;
+}
+.btn-ww--danger:hover { background: #fff5f5; }
+
+.ww-input {
+  width: 100%;
+  font-family: 'Courier New', monospace;
+  font-size: 0.85rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin: 8px 0 12px;
+  background: var(--surface-alt, #f8f7f4);
+  color: var(--text-primary);
+  outline: none;
+  box-sizing: border-box;
+}
+.ww-input:focus { border-color: var(--green-600, #16a34a); }
+
+.ww-new-address-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+}
