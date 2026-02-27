@@ -359,6 +359,7 @@ try {
           <td title="${b.wallet}">${b.wallet ? b.wallet.slice(0, 8) + '…' + b.wallet.slice(-6) : ''}</td>
           <td style="text-align:center">${b.isAvailable ? '✅' : '⛔'}</td>
           <td>${(b.createdAt || '').slice(0, 10)}</td>
+          <td><code style="font-size:0.75rem;word-break:break-all;user-select:all;">${b.manageToken || ''}</code></td>
           <td style="white-space:nowrap;">
             <a href="/api/p/${b.slug}/qr" target="_blank" title="Download QR" style="margin-right:12px;">⬇ QR</a>
             <button class="txs-btn" data-slug="${b.slug}" title="View transactions" style="margin-right:8px;">📋 Txs</button>
@@ -486,7 +487,7 @@ try {
     <thead>
       <tr>
         <th>Slug</th><th>Name</th><th>Service</th><th>City</th>
-        <th>Wallet</th><th>Available</th><th>Created</th><th>Actions</th>
+        <th>Wallet</th><th>Available</th><th>Created</th><th>Manage Token</th><th>Actions</th>
       </tr>
     </thead>
     <tbody>${rows}</tbody>
