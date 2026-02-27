@@ -64,6 +64,8 @@ Server starts at `http://localhost:4021`.
 - Two-phase fee collection — vendor payment + platform fee signed sequentially client-side
 - Transaction log in SQLite with fee status tracking
 - Admin view at `/admin` — all storefronts, wallet addresses, availability, QR download links, per-tenant transaction history, deliberate-friction delete flow
+- Persistent floating wallet widget — always-visible key management with live USDC balance, age warnings, and balance threshold alerts
+- Merchant self-service payments view — tap "My payments" on any storefront to see transaction history (manage token, stored in browser, no admin required)
 - Client-side private key signing — keys never leave the browser, used once, discarded
 - On-chain verification via BaseScan after payment settles
 
@@ -192,7 +194,10 @@ public/
   app.js                       # Registration page logic — slug check, wallet gen, form submit
   tenant.html                  # Generic storefront template (all /p/:slug pages)
   tenant.js                    # Storefront logic — config load, language switching,
-                               #   availability toggle, payment flow (two-phase), share
+                               #   availability toggle, payment flow (two-phase), share,
+                               #   unified manage-token gate, merchant payments view
+  wallet-widget.js             # Floating wallet widget — self-injecting FAB, localStorage
+                               #   key management, live balance via RPC, rotation prompts
   styles.css                   # Design system — CSS custom properties, all pages
   client-signer.bundle.js      # Built: x402 client-side signing (committed — x402 not on npm)
   wallet-gen.bundle.js         # Built: viem wallet generation (lightweight, no x402 dep)
@@ -231,6 +236,7 @@ All configuration via `.env`. See `.env.example` for all options.
 | `GET` | `/api/p/:slug/config` | Tenant config (name, service, rates, availability, fee params) |
 | `POST` | `/api/p/:slug/pay` | x402 payment endpoint |
 | `PATCH` | `/api/p/:slug/availability` | Toggle availability (requires manage token) |
+| `GET` | `/api/p/:slug/my-transactions` | Merchant's own transaction history (requires manage token) |
 | `GET` | `/api/p/:slug/qr` | QR code PNG for the storefront URL |
 
 ### Registration & Admin
