@@ -59,6 +59,9 @@ const T = {
     faqA2:            'USDC is a dollar-stable digital currency on the Base network. 1 USDC ≈ 1 USD. It is not speculative — it holds its value.',
     faqQ3:            'What is a Private Key?',
     faqA3:            'Your private key is like a digital signature. It signs your payment on your device and is immediately erased from memory — it is never sent to any server.',
+    // Receipt card
+    receiptTitle:     'Your order',
+    receiptTotal:     'Total',
     // Auto-pay countdown
     autoPayLabel:     'Paying automatically…',
     autoPayCancel:    'Cancel',
@@ -133,6 +136,9 @@ const T = {
     faqA2:            'USDC යනු Base ජාලය මත ඩොලර් ස්ථාවර ඩිජිටල් මුදලකි. 1 USDC ≈ 1 USD. එය ආයෝජනකාරී ක්‍රිප්ටෝ නොවේ — එහි වටිනාකම ස්ථාවරව පවතී.',
     faqQ3:            'Private Key යනු කුමක්ද?',
     faqA3:            'ඔබේ Private Key ඩිජිටල් අත්සනක් වැනිය. එය ඔබේ උපකරණයේ ගෙවීම අත්සන් කර ක්ෂණිකව මකා දමනු ලැබේ — කිසිදා server කිසිවකට යවනු නොලැබේ.',
+    // Receipt card
+    receiptTitle:     'ඔබේ ඇණවුම',
+    receiptTotal:     'එකතුව',
     // Auto-pay countdown
     autoPayLabel:     'ස්වයංක්‍රීයව ගෙවීම…',
     autoPayCancel:    'අවලංගු කරන්න',
@@ -207,6 +213,9 @@ const T = {
     faqA2:            'USDC என்பது Base நெட்வொர்க்கில் உள்ள டாலர்-நிலையான டிஜிட்டல் நாணயம். 1 USDC ≈ 1 USD. இது ஊகக் கிரிப்டோ அல்ல — இது தனது மதிப்பை நிலையாக வைத்திருக்கிறது.',
     faqQ3:            'Private Key என்றால் என்ன?',
     faqA3:            'உங்கள் Private Key ஒரு டிஜிட்டல் கையொப்பம் போன்றது. இது உங்கள் சாதனத்தில் கட்டணத்தில் கையெழுத்திட்டு உடனடியாக நினைவகத்திலிருந்து அழிக்கப்படுகிறது — எந்த சேவையகத்திற்கும் அனுப்பப்படுவதில்லை.',
+    // Receipt card
+    receiptTitle:     'உங்கள் ஆர்டர்',
+    receiptTotal:     'மொத்தம்',
     // Auto-pay countdown
     autoPayLabel:     'தானியங்கி கட்டணம்…',
     autoPayCancel:    'ரத்துசெய்',
@@ -841,19 +850,27 @@ function initUrlPrefill() {
   amountInput.value = lkr;
   if (presetWrap) presetWrap.style.display = 'none';
   updateUsdcDisplay();
-  maybeAutoPay(lkr);
+
+  // Decode and show itemized receipt if cart is present
+  const cartRaw = params.get('cart');
+  let cartItems = null;
+  if (cartRaw) {
+    try { cartItems = JSON.parse(decodeURIComponent(cartRaw)); } catch { /* ignore */ }
+  }
+  renderReceiptCard(cartItems, lkr);
+  maybeAutoPay(lkr, cartItems);
 }
 
 // ── Auto-pay ──────────────────────────────────────────────────────────────────
 // If the page loaded with ?lkr= AND the wallet widget has a saved key,
 // show a 3-second countdown and then fire the payment automatically.
-function maybeAutoPay(lkr) {
+function maybeAutoPay(lkr, cartItems) {
   const stored = wwLoad();
   if (!stored?.key) return;
-  showAutoPayCountdown(lkr, stored.key);
+  showAutoPayCountdown(lkr, stored.key, cartItems);
 }
 
-function showAutoPayCountdown(lkr, privateKey) {
+function showAutoPayCountdown(lkr, privateKey, cartItems) {
   const screen    = document.getElementById('autopay-screen');
   const vendorEl  = document.getElementById('autopay-vendor-name');
   const amountEl  = document.getElementById('autopay-amount');
@@ -863,6 +880,16 @@ function showAutoPayCountdown(lkr, privateKey) {
 
   vendorEl.textContent  = config.sellerName || 'Seller';
   amountEl.textContent  = `Rs. ${Math.round(lkr).toLocaleString()}`;
+
+  // Show receipt inside the countdown if items were passed
+  const autoPayReceiptEl = document.getElementById('autopay-receipt');
+  if (autoPayReceiptEl && cartItems?.length) {
+    autoPayReceiptEl.innerHTML = cartItems.map(i =>
+      `<div class="apr-row"><span class="apr-name">${escHtml(i.n)}</span><span class="apr-price">Rs. ${Number(i.p).toLocaleString()}</span></div>`
+    ).join('');
+    autoPayReceiptEl.style.display = 'block';
+  }
+
   screen.style.display  = 'flex';
 
   // Hide the main page content so the countdown is truly fullscreen
@@ -894,6 +921,31 @@ function showAutoPayCountdown(lkr, privateKey) {
   };
 
   requestAnimationFrame(tick);
+}
+
+// ── Receipt card (customer-facing, shown when ?cart= is present) ─────────────
+function renderReceiptCard(items, total) {
+  const card = document.getElementById('receipt-card');
+  if (!card) return;
+
+  if (!items?.length) {
+    card.style.display = 'none';
+    return;
+  }
+
+  document.getElementById('receipt-title').textContent = t('receiptTitle');
+  document.getElementById('receipt-total-label').textContent = t('receiptTotal');
+  document.getElementById('receipt-total-amount').textContent = `Rs. ${Math.round(total).toLocaleString()}`;
+
+  const body = document.getElementById('receipt-body');
+  body.innerHTML = items.map(i =>
+    `<div class="receipt-row">
+       <span class="receipt-name">${escHtml(i.n)}</span>
+       <span class="receipt-price">Rs. ${Number(i.p).toLocaleString()}</span>
+     </div>`
+  ).join('');
+
+  card.style.display = 'block';
 }
 
 // ── Register panel ────────────────────────────────────────────────────────────
@@ -1021,12 +1073,13 @@ function initRegisterPanel() {
   document.getElementById('register-done').addEventListener('click', async () => {
     const total = saleItems.reduce((s, i) => s + i.lkr, 0);
     if (!total) return;
+    const cartEncoded = encodeURIComponent(JSON.stringify(saleItems.map(i => ({ n: i.name, p: i.lkr }))));
     try {
-      const res = await fetch(`${apiBase}/qr?lkr=${total}`);
+      const res = await fetch(`${apiBase}/qr?lkr=${total}&cart=${cartEncoded}`);
       if (!res.ok) throw new Error('QR failed');
       const blob = await res.blob();
-      const url  = URL.createObjectURL(blob);
-      showPaymentQrModal(total, url);
+      const qrUrl = URL.createObjectURL(blob);
+      showPaymentQrModal(total, qrUrl, cartEncoded);
     } catch (err) {
       alert('Could not generate QR. Please try again.');
     }
@@ -1036,7 +1089,8 @@ function initRegisterPanel() {
   document.getElementById('register-share-wa').addEventListener('click', () => {
     const total = saleItems.reduce((s, i) => s + i.lkr, 0);
     if (!total) return;
-    const link = `${location.origin}/p/${slug}?lkr=${total}`;
+    const cartEncoded = encodeURIComponent(JSON.stringify(saleItems.map(i => ({ n: i.name, p: i.lkr }))));
+    const link = `${location.origin}/p/${slug}?lkr=${total}&cart=${cartEncoded}`;
     const text = `Pay Rs. ${total.toLocaleString()} to ${config.sellerName || 'Seller'}: ${link}`;
     window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
   });
@@ -1062,12 +1116,23 @@ function initRegisterPanel() {
   });
 
   // ── Payment QR modal ─────────────────────────────────────────────────────────
-  function showPaymentQrModal(total, qrObjectUrl) {
+  function showPaymentQrModal(total, qrObjectUrl, cartEncoded) {
     const modal   = document.getElementById('payment-qr-modal');
     const amountEl= document.getElementById('payment-qr-amount');
     const imgEl   = document.getElementById('payment-qr-img');
+
     amountEl.textContent = `Rs. ${total.toLocaleString()}`;
     imgEl.src = qrObjectUrl;
+
+    // Render vendor-side receipt summary in the QR modal
+    const receiptEl = document.getElementById('payment-qr-receipt');
+    if (receiptEl && saleItems.length) {
+      receiptEl.innerHTML = saleItems.map(i =>
+        `<div class="pqr-row"><span>${escHtml(i.name)}</span><span>Rs. ${i.lkr.toLocaleString()}</span></div>`
+      ).join('');
+      receiptEl.style.display = 'block';
+    }
+
     modal.style.display = 'flex';
     overlay.style.display = 'none';
 
@@ -1075,11 +1140,12 @@ function initRegisterPanel() {
       saleItems = [];
       renderSale();
       modal.style.display = 'none';
+      if (receiptEl) receiptEl.style.display = 'none';
       URL.revokeObjectURL(qrObjectUrl);
     };
 
     document.getElementById('payment-qr-share').onclick = () => {
-      const link = `${location.origin}/p/${slug}?lkr=${total}`;
+      const link = `${location.origin}/p/${slug}?lkr=${total}${cartEncoded ? `&cart=${cartEncoded}` : ''}`;
       const text = `Pay Rs. ${total.toLocaleString()} to ${config.sellerName || 'Seller'}: ${link}`;
       window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
     };

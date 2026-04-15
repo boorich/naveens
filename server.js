@@ -298,9 +298,10 @@ try {
     app.get('/api/p/:slug/qr', async (req, res) => {
       const business = getBySlug(req.params.slug);
       if (!business) return res.status(404).json({ error: 'Not found' });
-      const lkr = req.query.lkr ? parseInt(req.query.lkr, 10) : null;
+      const lkr      = req.query.lkr ? parseInt(req.query.lkr, 10) : null;
+      const cartParam = req.query.cart ? `&cart=${encodeURIComponent(req.query.cart)}` : '';
       const url  = lkr && lkr > 0
-        ? `${BASE_URL}/p/${req.params.slug}?lkr=${lkr}`
+        ? `${BASE_URL}/p/${req.params.slug}?lkr=${lkr}${cartParam}`
         : `${BASE_URL}/p/${req.params.slug}`;
       try {
         const buf = await QRCode.toBuffer(url, { type: 'png', width: 512, margin: 2 });

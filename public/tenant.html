@@ -68,6 +68,16 @@
     </div>
   </section>
 
+  <!-- Receipt card (shown when page loads with ?cart= from a vendor QR) -->
+  <div class="receipt-card" id="receipt-card" style="display:none;">
+    <h3 class="receipt-title" id="receipt-title">Your order</h3>
+    <div class="receipt-body" id="receipt-body"></div>
+    <div class="receipt-footer">
+      <span class="receipt-total-label" id="receipt-total-label">Total</span>
+      <span class="receipt-total-amount" id="receipt-total-amount"></span>
+    </div>
+  </div>
+
   <!-- Payment Section -->
   <section class="payment-section" id="payment-section">
     <h2 class="section-title" id="pay-title">Pay</h2>
@@ -206,6 +216,7 @@
     <div class="autopay-card">
       <div class="autopay-vendor-name" id="autopay-vendor-name"></div>
       <div class="autopay-amount" id="autopay-amount"></div>
+      <div class="autopay-receipt" id="autopay-receipt" style="display:none;"></div>
       <div class="autopay-label" id="autopay-label">Paying automatically…</div>
       <div class="autopay-progress-track">
         <div class="autopay-progress-bar" id="autopay-progress-bar"></div>
@@ -217,8 +228,9 @@
   <!-- Payment QR modal (vendor taps Done — fullscreen QR for customer to scan) -->
   <div class="payment-qr-modal" id="payment-qr-modal" style="display:none;" aria-modal="true" role="dialog">
     <div class="payment-qr-inner">
-      <div class="payment-qr-amount" id="payment-qr-amount"></div>
       <img class="payment-qr-img" id="payment-qr-img" src="" alt="Payment QR">
+      <div class="payment-qr-amount" id="payment-qr-amount"></div>
+      <div class="payment-qr-receipt" id="payment-qr-receipt" style="display:none;"></div>
       <div class="payment-qr-actions">
         <button class="btn btn-green btn-large" id="payment-qr-new-sale">New Sale</button>
         <button class="btn btn-white" id="payment-qr-share">Share via WhatsApp</button>
