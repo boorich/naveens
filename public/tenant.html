@@ -39,13 +39,34 @@
   <div class="action-buttons" id="contact-buttons" style="display:none;">
     <button class="btn btn-green btn-whatsapp" id="btn-whatsapp" style="display:none;">
       <span class="btn-icon">💬</span>
-      <span>WhatsApp</span>
+      <span id="contact-whatsapp-label">WhatsApp</span>
     </button>
     <button class="btn btn-white btn-call" id="btn-call" style="display:none;">
       <span class="btn-icon">📞</span>
-      <span>Call</span>
+      <span id="contact-call-label">Call</span>
     </button>
   </div>
+
+  <!-- How it works -->
+  <section class="how-it-works">
+    <h2 class="hiw-heading" id="hiw-title">How it works</h2>
+    <div class="hiw-steps">
+      <div class="hiw-step">
+        <span class="hiw-icon">📱</span>
+        <p id="hiw-step1">Scan the QR code or open this link</p>
+      </div>
+      <span class="hiw-arrow" aria-hidden="true">→</span>
+      <div class="hiw-step">
+        <span class="hiw-icon">💰</span>
+        <p id="hiw-step2">Enter the amount in LKR and tap Pay</p>
+      </div>
+      <span class="hiw-arrow" aria-hidden="true">→</span>
+      <div class="hiw-step">
+        <span class="hiw-icon">✅</span>
+        <p id="hiw-step3">The seller receives your payment instantly</p>
+      </div>
+    </div>
+  </section>
 
   <!-- Payment Section -->
   <section class="payment-section" id="payment-section">
@@ -61,6 +82,7 @@
         min="1"
         step="1"
         placeholder="500"
+        inputmode="decimal"
       >
 
       <div class="preset-buttons">
@@ -125,6 +147,27 @@
     <div class="payment-error" id="payment-error" style="display: none;">
       <p class="error-message" id="error-message"></p>
     </div>
+  </section>
+
+  <!-- Trust / FAQ -->
+  <section class="trust-faq">
+    <details class="faq-group">
+      <summary class="faq-summary" id="faq-title">Questions &amp; Safety</summary>
+      <div class="faq-body">
+        <div class="faq-item">
+          <p class="faq-q" id="faq-q1">Is my money safe?</p>
+          <p class="faq-a" id="faq-a1">Yes. Your payment goes directly to the seller's wallet. Naveen's never holds your funds.</p>
+        </div>
+        <div class="faq-item">
+          <p class="faq-q" id="faq-q2">What is USDC?</p>
+          <p class="faq-a" id="faq-a2">USDC is a dollar-stable digital currency on the Base network. 1 USDC ≈ 1 USD. It is not speculative — it holds its value.</p>
+        </div>
+        <div class="faq-item">
+          <p class="faq-q" id="faq-q3">What is a Private Key?</p>
+          <p class="faq-a" id="faq-a3">Your private key is like a digital signature. It signs your payment on your device and is immediately erased from memory — it is never sent to any server.</p>
+        </div>
+      </div>
+    </details>
   </section>
 
   <!-- Share section -->

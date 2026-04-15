@@ -1351,3 +1351,144 @@ h1, h2, h3 {
   font-size: 0.75rem;
   color: var(--text-secondary);
 }
+
+/* ─── How It Works ───────────────────────────────────────────────────────────── */
+.how-it-works {
+  margin: 0 16px 16px;
+  padding: 20px;
+  background: var(--green-50);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+}
+
+.hiw-heading {
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--green-900);
+  margin-bottom: 16px;
+  text-align: center;
+  letter-spacing: 0.01em;
+}
+
+.hiw-steps {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.hiw-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  flex: 1;
+  min-width: 80px;
+  max-width: 140px;
+  gap: 6px;
+}
+
+.hiw-icon {
+  font-size: 26px;
+  line-height: 1;
+}
+
+.hiw-step p {
+  font-size: 12px;
+  color: var(--text-mid);
+  line-height: 1.4;
+  margin: 0;
+}
+
+.hiw-arrow {
+  font-size: 18px;
+  color: var(--border-mid);
+  align-self: center;
+  flex-shrink: 0;
+  margin-top: -4px;
+}
+
+@media (max-width: 360px) {
+  .hiw-arrow { display: none; }
+  .hiw-steps { flex-direction: column; align-items: center; gap: 12px; }
+  .hiw-step { max-width: 100%; }
+}
+
+/* ─── Trust / FAQ ────────────────────────────────────────────────────────────── */
+.trust-faq {
+  margin: 0 16px 16px;
+}
+
+.faq-group {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.faq-summary {
+  cursor: pointer;
+  padding: 14px 18px;
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--green-900);
+  list-style: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  user-select: none;
+  gap: 8px;
+}
+
+.faq-summary::-webkit-details-marker { display: none; }
+
+.faq-summary::after {
+  content: '▾';
+  font-size: 14px;
+  color: var(--text-muted);
+  transition: transform 0.2s;
+  flex-shrink: 0;
+}
+
+details[open] .faq-summary::after {
+  transform: rotate(-180deg);
+}
+
+.faq-body {
+  padding: 0 18px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.faq-item {
+  border-top: 1px solid var(--border);
+  padding-top: 14px;
+}
+
+.faq-q {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--green-800);
+  margin-bottom: 4px;
+}
+
+.faq-a {
+  font-size: 13px;
+  color: var(--text-mid);
+  line-height: 1.55;
+}
+
+/* Ensure preset buttons meet 44px tap target on mobile */
+@media (max-width: 480px) {
+  .preset-btn {
+    min-height: 44px;
+  }
+  .lang-btn {
+    min-height: 36px;
+    min-width: 36px;
+  }
+}

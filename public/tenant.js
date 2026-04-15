@@ -39,6 +39,26 @@ const T = {
     invalidAmount:    'Please enter a valid amount.',
     amountTooLarge:   'Amount too large.',
     payFailed:        'Payment failed. Please try again.',
+    // Contact buttons
+    contactWhatsapp:  'WhatsApp',
+    contactCall:      'Call',
+    // Footer / modals
+    myPayments:       'My payments',
+    recentPayments:   'Recent Payments',
+    linkCopied:       'Link copied!',
+    // How it works
+    howItWorksTitle:  'How it works',
+    howItWorksStep1:  'Scan the QR code or open this link',
+    howItWorksStep2:  'Enter the amount in LKR and tap Pay',
+    howItWorksStep3:  'The seller receives your payment instantly',
+    // FAQ / Trust
+    faqTitle:         'Questions & Safety',
+    faqQ1:            'Is my money safe?',
+    faqA1:            "Yes. Your payment goes directly to the seller's wallet. Naveen's never holds your funds.",
+    faqQ2:            'What is USDC?',
+    faqA2:            'USDC is a dollar-stable digital currency on the Base network. 1 USDC ≈ 1 USD. It is not speculative — it holds its value.',
+    faqQ3:            'What is a Private Key?',
+    faqA3:            'Your private key is like a digital signature. It signs your payment on your device and is immediately erased from memory — it is never sent to any server.',
   },
   si: {
     available:        'දැන් ලබාගත හැකිය',
@@ -75,6 +95,26 @@ const T = {
     invalidAmount:    'වලංගු මුදලක් ඇතුළු කරන්න.',
     amountTooLarge:   'මුදල ඉතා විශාලයි.',
     payFailed:        'ගෙවීම අසාර්ථකයි. නැවත උත්සාහ කරන්න.',
+    // Contact buttons
+    contactWhatsapp:  'WhatsApp',
+    contactCall:      'ඇමතුම',
+    // Footer / modals
+    myPayments:       'මගේ ගෙවීම්',
+    recentPayments:   'මෑත ගෙවීම්',
+    linkCopied:       'සබැඳිය පිටපත් කරන ලදී!',
+    // How it works
+    howItWorksTitle:  'ක්‍රියා කරන ආකාරය',
+    howItWorksStep1:  'QR කේතය ස්කෑන් කරන්න හෝ මෙම සබැඳිය විවෘත කරන්න',
+    howItWorksStep2:  'LKR හි මුදල ඇතුළු කර ගෙවන්න 누르න්න',
+    howItWorksStep3:  'විකුණුම්කරු ගෙවීම ක්ෂණිකව ලබා ගනී',
+    // FAQ / Trust
+    faqTitle:         'ප්‍රශ්න සහ ආරක්ෂාව',
+    faqQ1:            'මගේ මුදල් ආරක්ෂිතද?',
+    faqA1:            'ඔව්. ඔබේ ගෙවීම කෙළින්ම විකුණුම්කරුගේ පසුම්බියට යයි. Naveen\'s කිසිදා ඔබේ මුදල් රඳවා නොගනී.',
+    faqQ2:            'USDC යනු කුමක්ද?',
+    faqA2:            'USDC යනු Base ජාලය මත ඩොලර් ස්ථාවර ඩිජිටල් මුදලකි. 1 USDC ≈ 1 USD. එය ආයෝජනකාරී ක්‍රිප්ටෝ නොවේ — එහි වටිනාකම ස්ථාවරව පවතී.',
+    faqQ3:            'Private Key යනු කුමක්ද?',
+    faqA3:            'ඔබේ Private Key ඩිජිටල් අත්සනක් වැනිය. එය ඔබේ උපකරණයේ ගෙවීම අත්සන් කර ක්ෂණිකව මකා දමනු ලැබේ — කිසිදා server කිසිවකට යවනු නොලැබේ.',
   },
   ta: {
     available:        'இப்போது கிடைக்கிறது',
@@ -111,6 +151,26 @@ const T = {
     invalidAmount:    'சரியான தொகையை உள்ளிடவும்.',
     amountTooLarge:   'தொகை மிகவும் அதிகம்.',
     payFailed:        'கட்டணம் தோல்வியடைந்தது. மீண்டும் முயற்சிக்கவும்.',
+    // Contact buttons
+    contactWhatsapp:  'WhatsApp',
+    contactCall:      'அழைப்பு',
+    // Footer / modals
+    myPayments:       'என் கட்டணங்கள்',
+    recentPayments:   'சமீபத்திய கட்டணங்கள்',
+    linkCopied:       'இணைப்பு நகலெடுக்கப்பட்டது!',
+    // How it works
+    howItWorksTitle:  'இது எப்படி செயல்படுகிறது',
+    howItWorksStep1:  'QR குறியீட்டை ஸ்கேன் செய்யவும் அல்லது இந்த இணைப்பை திறக்கவும்',
+    howItWorksStep2:  'LKR தொகையை உள்ளிட்டு செலுத்து அழுத்தவும்',
+    howItWorksStep3:  'விற்பனையாளர் உடனடியாக கட்டணம் பெறுவார்',
+    // FAQ / Trust
+    faqTitle:         'கேள்விகள் மற்றும் பாதுகாப்பு',
+    faqQ1:            'என் பணம் பாதுகாப்பாக உள்ளதா?',
+    faqA1:            'ஆம். உங்கள் கட்டணம் நேரடியாக விற்பனையாளரின் வாலட்டிற்கு செல்கிறது. Naveen\'s உங்கள் நிதியை ஒருபோதும் வைத்திருக்காது.',
+    faqQ2:            'USDC என்றால் என்ன?',
+    faqA2:            'USDC என்பது Base நெட்வொர்க்கில் உள்ள டாலர்-நிலையான டிஜிட்டல் நாணயம். 1 USDC ≈ 1 USD. இது ஊகக் கிரிப்டோ அல்ல — இது தனது மதிப்பை நிலையாக வைத்திருக்கிறது.',
+    faqQ3:            'Private Key என்றால் என்ன?',
+    faqA3:            'உங்கள் Private Key ஒரு டிஜிட்டல் கையொப்பம் போன்றது. இது உங்கள் சாதனத்தில் கட்டணத்தில் கையெழுத்திட்டு உடனடியாக நினைவகத்திலிருந்து அழிக்கப்படுகிறது — எந்த சேவையகத்திற்கும் அனுப்பப்படுவதில்லை.',
   },
 };
 
@@ -138,7 +198,16 @@ let config = {
   platformFeeWallet: '',
 };
 
-let lang = localStorage.getItem('lang') || 'en';
+function detectLang() {
+  const saved = localStorage.getItem('lang');
+  if (saved && T[saved]) return saved;
+  const nav = (navigator.language || (navigator.languages && navigator.languages[0]) || 'en').toLowerCase();
+  if (nav.startsWith('ta')) return 'ta';
+  if (nav.startsWith('si')) return 'si';
+  return 'en';
+}
+
+let lang = detectLang();
 
 function t(key, ...args) {
   const entry = T[lang]?.[key] ?? T.en[key];
@@ -220,12 +289,47 @@ function applyLanguage() {
   const footerQr = document.getElementById('footer-qr-link');
   if (footerQr) footerQr.textContent = t('printQr');
 
+  const footerMyPayments = document.getElementById('footer-my-payments');
+  if (footerMyPayments) footerMyPayments.textContent = t('myPayments');
+
+  const myPaymentsTitle = document.querySelector('.my-payments-title');
+  if (myPaymentsTitle) myPaymentsTitle.textContent = t('recentPayments');
+
   const managePromptEl = document.querySelector('.manage-token-label');
   if (managePromptEl) managePromptEl.textContent = t('managePrompt');
   const manageConfirmEl = document.getElementById('manage-token-confirm');
   if (manageConfirmEl) manageConfirmEl.textContent = t('manageConfirm');
   const manageCancelEl = document.getElementById('manage-token-cancel');
   if (manageCancelEl) manageCancelEl.textContent = t('manageCancel');
+
+  // Contact buttons
+  const waBtnLabel = document.getElementById('contact-whatsapp-label');
+  if (waBtnLabel) waBtnLabel.textContent = t('contactWhatsapp');
+  const callBtnLabel = document.getElementById('contact-call-label');
+  if (callBtnLabel) callBtnLabel.textContent = t('contactCall');
+
+  // How it works
+  const hiwTitle = document.getElementById('hiw-title');
+  if (hiwTitle) hiwTitle.textContent = t('howItWorksTitle');
+  const hiwStep1 = document.getElementById('hiw-step1');
+  if (hiwStep1) hiwStep1.textContent = t('howItWorksStep1');
+  const hiwStep2 = document.getElementById('hiw-step2');
+  if (hiwStep2) hiwStep2.textContent = t('howItWorksStep2');
+  const hiwStep3 = document.getElementById('hiw-step3');
+  if (hiwStep3) hiwStep3.textContent = t('howItWorksStep3');
+
+  // FAQ
+  const faqTitle = document.getElementById('faq-title');
+  if (faqTitle) faqTitle.textContent = t('faqTitle');
+  const faqItems = [
+    ['faq-q1', 'faqQ1'], ['faq-a1', 'faqA1'],
+    ['faq-q2', 'faqQ2'], ['faq-a2', 'faqA2'],
+    ['faq-q3', 'faqQ3'], ['faq-a3', 'faqA3'],
+  ];
+  faqItems.forEach(([id, key]) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = t(key);
+  });
 
   updateUsdcDisplay();
 }
@@ -615,7 +719,7 @@ function initShare() {
   document.getElementById('share-copy').addEventListener('click', async () => {
     try { await navigator.clipboard.writeText(pageUrl); }
     catch { /* fallback */ }
-    alert('Link copied!');
+    alert(t('linkCopied'));
   });
 }
 
