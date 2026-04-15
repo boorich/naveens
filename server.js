@@ -124,6 +124,7 @@ try {
     create: createBusiness, list: listBusinesses,
     setAvailability, recordTransaction, updateTransactionFee,
     deleteBySlug, listTransactionsBySlug,
+    listProducts, createProduct, deleteProduct,
   } = await import('./lib/businesses.js');
   const { seedDefaultTenant } = await import('./lib/seed.js');
 
@@ -245,6 +246,43 @@ try {
       }
     });
 
+    // ── Register products (vendor-only, manage-token-gated) ──────────────────
+    slugRouter.get('/products', (req, res) => {
+      const token    = req.headers['x-manage-token'] || req.query.token;
+      const business = getBySlug(req.params.slug);
+      if (!business) return res.status(404).json({ error: 'Not found' });
+      if (!token || token !== business.manageToken) {
+        return res.status(403).json({ error: 'Invalid token' });
+      }
+      res.json(listProducts(req.params.slug));
+    });
+
+    slugRouter.post('/products', (req, res) => {
+      const token    = req.headers['x-manage-token'] || req.query.token;
+      const business = getBySlug(req.params.slug);
+      if (!business) return res.status(404).json({ error: 'Not found' });
+      if (!token || token !== business.manageToken) {
+        return res.status(403).json({ error: 'Invalid token' });
+      }
+      const { name, lkrPrice } = req.body;
+      if (!name || !lkrPrice || lkrPrice <= 0) {
+        return res.status(400).json({ error: 'name and lkrPrice required' });
+      }
+      const product = createProduct(req.params.slug, name, parseInt(lkrPrice, 10));
+      res.status(201).json(product);
+    });
+
+    slugRouter.delete('/products/:id', (req, res) => {
+      const token    = req.headers['x-manage-token'] || req.query.token;
+      const business = getBySlug(req.params.slug);
+      if (!business) return res.status(404).json({ error: 'Not found' });
+      if (!token || token !== business.manageToken) {
+        return res.status(403).json({ error: 'Invalid token' });
+      }
+      deleteProduct(parseInt(req.params.id, 10), req.params.slug);
+      res.json({ ok: true });
+    });
+
     app.use('/api/p/:slug', slugRouter);
 
     // Tenant storefront page
@@ -256,15 +294,18 @@ try {
       }
     });
 
-    // QR code for tenant page (PNG download)
+    // QR code for tenant page — ?lkr=X encodes a payment-request URL
     app.get('/api/p/:slug/qr', async (req, res) => {
       const business = getBySlug(req.params.slug);
       if (!business) return res.status(404).json({ error: 'Not found' });
-      const url = `${BASE_URL}/p/${req.params.slug}`;
+      const lkr = req.query.lkr ? parseInt(req.query.lkr, 10) : null;
+      const url  = lkr && lkr > 0
+        ? `${BASE_URL}/p/${req.params.slug}?lkr=${lkr}`
+        : `${BASE_URL}/p/${req.params.slug}`;
       try {
-        const buf = await QRCode.toBuffer(url, { type: 'png', width: 400, margin: 2 });
+        const buf = await QRCode.toBuffer(url, { type: 'png', width: 512, margin: 2 });
         res.set('Content-Type', 'image/png');
-        res.set('Content-Disposition', `attachment; filename="${req.params.slug}-qr.png"`);
+        if (!lkr) res.set('Content-Disposition', `attachment; filename="${req.params.slug}-qr.png"`);
         res.send(buf);
       } catch (err) {
         res.status(500).json({ error: 'QR generation failed' });

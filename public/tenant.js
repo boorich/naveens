@@ -59,6 +59,24 @@ const T = {
     faqA2:            'USDC is a dollar-stable digital currency on the Base network. 1 USDC ≈ 1 USD. It is not speculative — it holds its value.',
     faqQ3:            'What is a Private Key?',
     faqA3:            'Your private key is like a digital signature. It signs your payment on your device and is immediately erased from memory — it is never sent to any server.',
+    // Auto-pay countdown
+    autoPayLabel:     'Paying automatically…',
+    autoPayCancel:    'Cancel',
+    // Register panel
+    registerTitle:    'Register',
+    registerEmpty:    'No items yet. Tap a product above.',
+    registerTotal:    'Total',
+    registerRemoveLast: 'Remove last',
+    registerClear:    'Clear',
+    registerDone:     'Done →',
+    registerShare:    'Share via WhatsApp',
+    registerManage:   'Manage items',
+    registerAddName:  'Item name',
+    registerAddPrice: 'LKR',
+    registerAdd:      'Add',
+    registerDelete:   '✕',
+    registerNewSale:  'New Sale',
+    registerFooter:   'Register',
   },
   si: {
     available:        'දැන් ලබාගත හැකිය',
@@ -115,6 +133,24 @@ const T = {
     faqA2:            'USDC යනු Base ජාලය මත ඩොලර් ස්ථාවර ඩිජිටල් මුදලකි. 1 USDC ≈ 1 USD. එය ආයෝජනකාරී ක්‍රිප්ටෝ නොවේ — එහි වටිනාකම ස්ථාවරව පවතී.',
     faqQ3:            'Private Key යනු කුමක්ද?',
     faqA3:            'ඔබේ Private Key ඩිජිටල් අත්සනක් වැනිය. එය ඔබේ උපකරණයේ ගෙවීම අත්සන් කර ක්ෂණිකව මකා දමනු ලැබේ — කිසිදා server කිසිවකට යවනු නොලැබේ.',
+    // Auto-pay countdown
+    autoPayLabel:     'ස්වයංක්‍රීයව ගෙවීම…',
+    autoPayCancel:    'අවලංගු කරන්න',
+    // Register panel
+    registerTitle:    'ලේඛකය',
+    registerEmpty:    'තවම දෙයක් නෑ. ඉහළ නිෂ්පාදනයක් තෝරන්න.',
+    registerTotal:    'එකතුව',
+    registerRemoveLast: 'අවසාන ඉවත් කරන්න',
+    registerClear:    'හිස් කරන්න',
+    registerDone:     'සූදානම් →',
+    registerShare:    'WhatsApp හරහා බෙදාගන්න',
+    registerManage:   'අයිතම කළමනාකරණය',
+    registerAddName:  'නිෂ්පාදන නාමය',
+    registerAddPrice: 'LKR',
+    registerAdd:      'එකතු කරන්න',
+    registerDelete:   '✕',
+    registerNewSale:  'නව විකිණුම',
+    registerFooter:   'ලේඛකය',
   },
   ta: {
     available:        'இப்போது கிடைக்கிறது',
@@ -171,6 +207,24 @@ const T = {
     faqA2:            'USDC என்பது Base நெட்வொர்க்கில் உள்ள டாலர்-நிலையான டிஜிட்டல் நாணயம். 1 USDC ≈ 1 USD. இது ஊகக் கிரிப்டோ அல்ல — இது தனது மதிப்பை நிலையாக வைத்திருக்கிறது.',
     faqQ3:            'Private Key என்றால் என்ன?',
     faqA3:            'உங்கள் Private Key ஒரு டிஜிட்டல் கையொப்பம் போன்றது. இது உங்கள் சாதனத்தில் கட்டணத்தில் கையெழுத்திட்டு உடனடியாக நினைவகத்திலிருந்து அழிக்கப்படுகிறது — எந்த சேவையகத்திற்கும் அனுப்பப்படுவதில்லை.',
+    // Auto-pay countdown
+    autoPayLabel:     'தானியங்கி கட்டணம்…',
+    autoPayCancel:    'ரத்துசெய்',
+    // Register panel
+    registerTitle:    'பதிவு',
+    registerEmpty:    'இன்னும் பொருட்கள் இல்லை. மேலே ஒரு தயாரிப்பை தேர்ந்தெடுக்கவும்.',
+    registerTotal:    'மொத்தம்',
+    registerRemoveLast: 'கடைசியை அகற்று',
+    registerClear:    'அழி',
+    registerDone:     'முடிந்தது →',
+    registerShare:    'WhatsApp வழியாக பகிர்',
+    registerManage:   'பொருட்களை நிர்வகி',
+    registerAddName:  'பொருளின் பெயர்',
+    registerAddPrice: 'LKR',
+    registerAdd:      'சேர்',
+    registerDelete:   '✕',
+    registerNewSale:  'புதிய விற்பனை',
+    registerFooter:   'பதிவு',
   },
 };
 
@@ -221,10 +275,12 @@ document.addEventListener('DOMContentLoaded', async () => {
   initLanguage();
   initAvailability();
   initPresets();
+  initUrlPrefill();   // must come after initPresets so presets can be hidden
   initPayButton();
   initShare();
   initQrFooter();
   initMyPayments();
+  initRegisterPanel();
 });
 // wallet-widget.js (loaded separately) handles the floating widget UI.
 
@@ -317,6 +373,34 @@ function applyLanguage() {
   if (hiwStep2) hiwStep2.textContent = t('howItWorksStep2');
   const hiwStep3 = document.getElementById('hiw-step3');
   if (hiwStep3) hiwStep3.textContent = t('howItWorksStep3');
+
+  // Auto-pay countdown
+  const autoPayLabelEl = document.getElementById('autopay-label');
+  if (autoPayLabelEl) autoPayLabelEl.textContent = t('autoPayLabel');
+  const autoPayCancelEl = document.getElementById('autopay-cancel');
+  if (autoPayCancelEl) autoPayCancelEl.textContent = t('autoPayCancel');
+
+  // Register panel
+  const registerTitleEl = document.getElementById('register-title');
+  if (registerTitleEl) registerTitleEl.textContent = t('registerTitle');
+  const registerEmptyEl = document.getElementById('register-empty');
+  if (registerEmptyEl) registerEmptyEl.textContent = t('registerEmpty');
+  const registerTotalLabelEl = document.getElementById('register-total-label');
+  if (registerTotalLabelEl) registerTotalLabelEl.textContent = t('registerTotal');
+  const removeLastEl = document.getElementById('register-remove-last');
+  if (removeLastEl) removeLastEl.textContent = t('registerRemoveLast');
+  const clearEl = document.getElementById('register-clear');
+  if (clearEl) clearEl.textContent = t('registerClear');
+  const doneEl = document.getElementById('register-done');
+  if (doneEl) doneEl.textContent = t('registerDone');
+  const registerShareEl = document.getElementById('register-share-wa');
+  if (registerShareEl) registerShareEl.textContent = t('registerShare');
+  const manageSummaryEl = document.getElementById('register-manage-summary');
+  if (manageSummaryEl) manageSummaryEl.textContent = t('registerManage');
+  const newSaleEl = document.getElementById('payment-qr-new-sale');
+  if (newSaleEl) newSaleEl.textContent = t('registerNewSale');
+  const footerRegisterEl = document.getElementById('footer-register');
+  if (footerRegisterEl) footerRegisterEl.textContent = t('registerFooter');
 
   updateUsdcDisplay();
 }
@@ -742,6 +826,269 @@ const WW_KEY  = 'x402:wallet:v1';
 const wwLoad  = () => { try { return JSON.parse(localStorage.getItem(WW_KEY)); } catch { return null; } };
 const wwSave  = (k, a) => localStorage.setItem(WW_KEY, JSON.stringify({ key: k, address: a, savedAt: Date.now() }));
 const wwClear = () => localStorage.removeItem(WW_KEY);
+
+// ── URL amount pre-fill ───────────────────────────────────────────────────────
+// When page loads with ?lkr=X (e.g. from a vendor-generated QR), pre-fill the
+// amount and trigger auto-pay if the wallet widget has a saved key.
+function initUrlPrefill() {
+  const params   = new URLSearchParams(location.search);
+  const rawLkr   = params.get('lkr');
+  const lkr      = rawLkr ? parseFloat(rawLkr) : null;
+  if (!lkr || lkr <= 0) return;
+
+  const amountInput = document.getElementById('amount-input');
+  const presetWrap  = document.querySelector('.preset-buttons');
+  amountInput.value = lkr;
+  if (presetWrap) presetWrap.style.display = 'none';
+  updateUsdcDisplay();
+  maybeAutoPay(lkr);
+}
+
+// ── Auto-pay ──────────────────────────────────────────────────────────────────
+// If the page loaded with ?lkr= AND the wallet widget has a saved key,
+// show a 3-second countdown and then fire the payment automatically.
+function maybeAutoPay(lkr) {
+  const stored = wwLoad();
+  if (!stored?.key) return;
+  showAutoPayCountdown(lkr, stored.key);
+}
+
+function showAutoPayCountdown(lkr, privateKey) {
+  const screen    = document.getElementById('autopay-screen');
+  const vendorEl  = document.getElementById('autopay-vendor-name');
+  const amountEl  = document.getElementById('autopay-amount');
+  const progressEl= document.getElementById('autopay-progress-bar');
+  const cancelBtn = document.getElementById('autopay-cancel');
+  if (!screen) return;
+
+  vendorEl.textContent  = config.sellerName || 'Seller';
+  amountEl.textContent  = `Rs. ${Math.round(lkr).toLocaleString()}`;
+  screen.style.display  = 'flex';
+
+  // Hide the main page content so the countdown is truly fullscreen
+  document.querySelector('.payment-section')?.style?.setProperty('display', 'none');
+
+  let cancelled = false;
+  const DURATION = 3000;
+  const start    = performance.now();
+
+  function tick(now) {
+    if (cancelled) return;
+    const elapsed  = now - start;
+    const progress = Math.min(elapsed / DURATION, 1);
+    progressEl.style.width = `${progress * 100}%`;
+    if (progress < 1) {
+      requestAnimationFrame(tick);
+    } else {
+      screen.style.display = 'none';
+      document.querySelector('.payment-section')?.style?.removeProperty('display');
+      handlePayment();
+    }
+  }
+
+  cancelBtn.onclick = () => {
+    cancelled = true;
+    screen.style.display = 'none';
+    document.querySelector('.payment-section')?.style?.removeProperty('display');
+    cancelBtn.onclick = null;
+  };
+
+  requestAnimationFrame(tick);
+}
+
+// ── Register panel ────────────────────────────────────────────────────────────
+// Manage-token-gated cash register for the vendor.
+// State is kept entirely local; server is only called for Done (QR fetch).
+function initRegisterPanel() {
+  const overlay      = document.getElementById('register-overlay');
+  const closeBtn     = document.getElementById('register-close');
+  const footerBtn    = document.getElementById('footer-register');
+  if (!overlay || !footerBtn) return;
+
+  let saleItems = [];   // { name, lkr }[]
+
+  // ── Open / close ────────────────────────────────────────────────────────────
+  footerBtn.addEventListener('click', () => {
+    requireManageToken(() => {
+      overlay.style.display = 'flex';
+      loadProducts();
+    });
+  });
+
+  closeBtn.addEventListener('click', () => { overlay.style.display = 'none'; });
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.style.display = 'none'; });
+
+  // ── Fetch + render product grid ─────────────────────────────────────────────
+  async function loadProducts() {
+    const token = localStorage.getItem(`manage-token:${slug}`);
+    const grid  = document.getElementById('register-products');
+    const list  = document.getElementById('register-product-list');
+    try {
+      const res  = await fetch(`${apiBase}/products`, { headers: { 'x-manage-token': token } });
+      if (res.status === 403) {
+        localStorage.removeItem(`manage-token:${slug}`);
+        overlay.style.display = 'none';
+        return;
+      }
+      const products = await res.json();
+      renderProductGrid(products, grid);
+      renderProductList(products, list);
+    } catch {
+      grid.innerHTML = '<p class="register-empty">Could not load items.</p>';
+    }
+  }
+
+  function renderProductGrid(products, grid) {
+    if (!products.length) {
+      grid.innerHTML = `<p class="register-empty">${t('registerEmpty')}</p>`;
+      return;
+    }
+    grid.innerHTML = products.map(p => `
+      <button class="register-product-btn" data-name="${escHtml(p.name)}" data-price="${p.lkrPrice}">
+        <span class="rpb-name">${escHtml(p.name)}</span>
+        <span class="rpb-price">Rs. ${p.lkrPrice.toLocaleString()}</span>
+      </button>`).join('');
+
+    grid.querySelectorAll('.register-product-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        saleItems.push({ name: btn.dataset.name, lkr: parseInt(btn.dataset.price, 10) });
+        renderSale();
+      });
+    });
+  }
+
+  function renderProductList(products, list) {
+    if (!products.length) { list.innerHTML = ''; return; }
+    list.innerHTML = products.map(p => `
+      <div class="register-pl-row" data-id="${p.id}">
+        <span class="register-pl-name">${escHtml(p.name)}</span>
+        <span class="register-pl-price">Rs. ${p.lkrPrice.toLocaleString()}</span>
+        <button class="btn-icon-only register-pl-delete" data-id="${p.id}" title="Delete">${t('registerDelete')}</button>
+      </div>`).join('');
+
+    list.querySelectorAll('.register-pl-delete').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const token = localStorage.getItem(`manage-token:${slug}`);
+        await fetch(`${apiBase}/products/${btn.dataset.id}`, {
+          method: 'DELETE',
+          headers: { 'x-manage-token': token },
+        });
+        loadProducts();
+      });
+    });
+  }
+
+  // ── Current sale ─────────────────────────────────────────────────────────────
+  function renderSale() {
+    const itemsEl  = document.getElementById('register-items');
+    const totalEl  = document.getElementById('register-total-amount');
+    const doneBtn  = document.getElementById('register-done');
+    const shareBtn = document.getElementById('register-share-wa');
+    const emptyEl  = document.getElementById('register-empty');
+
+    if (!saleItems.length) {
+      itemsEl.innerHTML = `<p class="register-empty" id="register-empty">${t('registerEmpty')}</p>`;
+      totalEl.textContent = 'Rs. 0';
+      doneBtn.disabled  = true;
+      shareBtn.disabled = true;
+      return;
+    }
+
+    const total = saleItems.reduce((s, i) => s + i.lkr, 0);
+    itemsEl.innerHTML = saleItems.map((item, idx) => `
+      <div class="register-item-row">
+        <span class="ri-name">${escHtml(item.name)}</span>
+        <span class="ri-price">Rs. ${item.lkr.toLocaleString()}</span>
+      </div>`).join('');
+
+    totalEl.textContent = `Rs. ${total.toLocaleString()}`;
+    doneBtn.disabled  = false;
+    shareBtn.disabled = false;
+  }
+
+  // ── Remove last / clear ──────────────────────────────────────────────────────
+  document.getElementById('register-remove-last').addEventListener('click', () => {
+    saleItems.pop();
+    renderSale();
+  });
+
+  document.getElementById('register-clear').addEventListener('click', () => {
+    saleItems = [];
+    renderSale();
+  });
+
+  // ── Done → show payment QR ───────────────────────────────────────────────────
+  document.getElementById('register-done').addEventListener('click', async () => {
+    const total = saleItems.reduce((s, i) => s + i.lkr, 0);
+    if (!total) return;
+    try {
+      const res = await fetch(`${apiBase}/qr?lkr=${total}`);
+      if (!res.ok) throw new Error('QR failed');
+      const blob = await res.blob();
+      const url  = URL.createObjectURL(blob);
+      showPaymentQrModal(total, url);
+    } catch (err) {
+      alert('Could not generate QR. Please try again.');
+    }
+  });
+
+  // ── Share via WhatsApp ───────────────────────────────────────────────────────
+  document.getElementById('register-share-wa').addEventListener('click', () => {
+    const total = saleItems.reduce((s, i) => s + i.lkr, 0);
+    if (!total) return;
+    const link = `${location.origin}/p/${slug}?lkr=${total}`;
+    const text = `Pay Rs. ${total.toLocaleString()} to ${config.sellerName || 'Seller'}: ${link}`;
+    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+  });
+
+  // ── Add product form ─────────────────────────────────────────────────────────
+  document.getElementById('register-add-btn').addEventListener('click', async () => {
+    const nameInput  = document.getElementById('register-product-name');
+    const priceInput = document.getElementById('register-product-price');
+    const name  = nameInput.value.trim();
+    const price = parseInt(priceInput.value, 10);
+    if (!name || !price || price <= 0) return;
+    const token = localStorage.getItem(`manage-token:${slug}`);
+    const res = await fetch(`${apiBase}/products`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-manage-token': token },
+      body: JSON.stringify({ name, lkrPrice: price }),
+    });
+    if (res.ok) {
+      nameInput.value  = '';
+      priceInput.value = '';
+      loadProducts();
+    }
+  });
+
+  // ── Payment QR modal ─────────────────────────────────────────────────────────
+  function showPaymentQrModal(total, qrObjectUrl) {
+    const modal   = document.getElementById('payment-qr-modal');
+    const amountEl= document.getElementById('payment-qr-amount');
+    const imgEl   = document.getElementById('payment-qr-img');
+    amountEl.textContent = `Rs. ${total.toLocaleString()}`;
+    imgEl.src = qrObjectUrl;
+    modal.style.display = 'flex';
+    overlay.style.display = 'none';
+
+    document.getElementById('payment-qr-new-sale').onclick = () => {
+      saleItems = [];
+      renderSale();
+      modal.style.display = 'none';
+      URL.revokeObjectURL(qrObjectUrl);
+    };
+
+    document.getElementById('payment-qr-share').onclick = () => {
+      const link = `${location.origin}/p/${slug}?lkr=${total}`;
+      const text = `Pay Rs. ${total.toLocaleString()} to ${config.sellerName || 'Seller'}: ${link}`;
+      window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+    };
+  }
+}
+
+function escHtml(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
 
 // ─── My Payments (merchant self-service) ──────────────────────────────────────
 function initMyPayments() {

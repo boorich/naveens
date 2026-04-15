@@ -181,6 +181,8 @@
       <a class="footer-qr-link" id="footer-qr-link" href="#" target="_blank">Print QR</a>
       &nbsp;·&nbsp;
       <button class="footer-link-btn" id="footer-my-payments">My payments</button>
+      &nbsp;·&nbsp;
+      <button class="footer-link-btn" id="footer-register">Register</button>
     </p>
   </footer>
 
@@ -196,6 +198,74 @@
       <div id="my-payments-list" style="display:none;">
         <div id="my-payments-body"></div>
       </div>
+    </div>
+  </div>
+
+  <!-- Auto-pay countdown (customer scanned a QR with ?lkr=, key already saved) -->
+  <div class="autopay-screen" id="autopay-screen" style="display:none;" aria-modal="true" role="dialog">
+    <div class="autopay-card">
+      <div class="autopay-vendor-name" id="autopay-vendor-name"></div>
+      <div class="autopay-amount" id="autopay-amount"></div>
+      <div class="autopay-label" id="autopay-label">Paying automatically…</div>
+      <div class="autopay-progress-track">
+        <div class="autopay-progress-bar" id="autopay-progress-bar"></div>
+      </div>
+      <button class="btn btn-white autopay-cancel" id="autopay-cancel">Cancel</button>
+    </div>
+  </div>
+
+  <!-- Payment QR modal (vendor taps Done — fullscreen QR for customer to scan) -->
+  <div class="payment-qr-modal" id="payment-qr-modal" style="display:none;" aria-modal="true" role="dialog">
+    <div class="payment-qr-inner">
+      <div class="payment-qr-amount" id="payment-qr-amount"></div>
+      <img class="payment-qr-img" id="payment-qr-img" src="" alt="Payment QR">
+      <div class="payment-qr-actions">
+        <button class="btn btn-green btn-large" id="payment-qr-new-sale">New Sale</button>
+        <button class="btn btn-white" id="payment-qr-share">Share via WhatsApp</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Register panel (vendor-only, manage-token-gated) -->
+  <div class="register-overlay" id="register-overlay" style="display:none;" aria-modal="true" role="dialog">
+    <div class="register-panel">
+      <div class="register-header">
+        <h2 class="register-title" id="register-title">Register</h2>
+        <button class="register-close" id="register-close" aria-label="Close">✕</button>
+      </div>
+
+      <!-- Quick-tap product grid (populated from /api/p/:slug/products) -->
+      <div class="register-products" id="register-products"></div>
+
+      <!-- Running sale -->
+      <div class="register-sale">
+        <div class="register-items" id="register-items">
+          <p class="register-empty" id="register-empty">No items yet. Tap a product above.</p>
+        </div>
+        <div class="register-total-row">
+          <span class="register-total-label" id="register-total-label">Total</span>
+          <span class="register-total-amount" id="register-total-amount">Rs. 0</span>
+        </div>
+        <div class="register-row-btns">
+          <button class="btn btn-white btn-sm" id="register-remove-last">Remove last</button>
+          <button class="btn btn-white btn-sm" id="register-clear">Clear</button>
+        </div>
+        <button class="btn btn-green btn-large" id="register-done" disabled>Done →</button>
+        <button class="btn btn-white register-share-wa" id="register-share-wa" disabled>Share via WhatsApp</button>
+      </div>
+
+      <!-- Add / manage products -->
+      <details class="register-manage-products">
+        <summary class="register-manage-summary" id="register-manage-summary">Manage items</summary>
+        <div class="register-manage-body">
+          <div class="register-add-row">
+            <input type="text" id="register-product-name" class="register-input" placeholder="Item name">
+            <input type="number" id="register-product-price" class="register-input register-input-price" placeholder="LKR" inputmode="numeric" min="1">
+            <button class="btn btn-green btn-sm" id="register-add-btn">Add</button>
+          </div>
+          <div id="register-product-list"></div>
+        </div>
+      </details>
     </div>
   </div>
 
