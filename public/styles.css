@@ -1417,10 +1417,6 @@ h1, h2, h3 {
 }
 
 /* ─── Trust / FAQ ────────────────────────────────────────────────────────────── */
-.trust-faq {
-  margin: 0 16px 16px;
-}
-
 .faq-group {
   background: var(--surface);
   border: 1px solid var(--border);

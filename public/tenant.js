@@ -318,19 +318,6 @@ function applyLanguage() {
   const hiwStep3 = document.getElementById('hiw-step3');
   if (hiwStep3) hiwStep3.textContent = t('howItWorksStep3');
 
-  // FAQ
-  const faqTitle = document.getElementById('faq-title');
-  if (faqTitle) faqTitle.textContent = t('faqTitle');
-  const faqItems = [
-    ['faq-q1', 'faqQ1'], ['faq-a1', 'faqA1'],
-    ['faq-q2', 'faqQ2'], ['faq-a2', 'faqA2'],
-    ['faq-q3', 'faqQ3'], ['faq-a3', 'faqA3'],
-  ];
-  faqItems.forEach(([id, key]) => {
-    const el = document.getElementById(id);
-    if (el) el.textContent = t(key);
-  });
-
   updateUsdcDisplay();
 }
 
